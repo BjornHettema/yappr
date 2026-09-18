@@ -1,0 +1,88 @@
+# Yappr
+
+Yappr lets a traveler brief a phone call in their own language; a live voice
+model then makes the call in the *local* language, shows a dual-language
+transcript as it happens, and writes a summary when it hangs up.
+
+Repo: https://github.com/BjornHettema/yappr (public — this is the only copy
+that matters; see "Workflow" below).
+
+## Stack
+
+- Next.js 15 (App Router) + React 19, TypeScript, strict mode.
+- No database, no auth, no backend server beyond Next's own API routes.
+- Client-side state (the call brief, live transcript, summary) lives only in
+  `sessionStorage` — see `lib/types.ts`. It does not persist across devices
+  or page reloads in a new tab; that's intentional for this prototype stage,
+  not a bug.
+
+## Layout
+
+```
+app/
+  page.tsx                     Marketing/landing page
+  call/page.tsx                Step 1: brief the call (form -> sessionStorage)
+  call/live/LiveCall.tsx        Step 2: the actual live call (WebRTC to OpenAI Realtime)
+  call/summary/page.tsx        Step 3: post-call summary + full transcript
+  api/realtime/session/route.ts    Mints a short-lived OpenAI Realtime client secret
+  api/simulate-business/route.ts   Roleplays the "business" side of the call (demo only)
+  api/summary/route.ts             Turns the transcript into a structured summary
+  api/translate/route.ts           One-off text translation for the live transcript
+lib/
+  languages.ts    Dropdown options (traveler/local languages, business types)
+  openai.ts       OpenAI header/model helpers + the `end_call` tool definition
+  prompts.ts      All LLM prompt strings (agent, business simulator, summary)
+  types.ts        Shared types + sessionStorage read/write helpers
+```
+
+## Commands
+
+```bash
+npm install
+npm run dev         # http://localhost:3000
+npm run build        # also type-checks
+npm run lint
+npm run typecheck    # tsc --noEmit, faster than a full build
+```
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` before running anything that hits the
+API routes (the landing page and static parts build/run fine without it).
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Yes | Read server-side only, in `lib/openai.ts`. Never expose this to the client. |
+| `OPENAI_REALTIME_MODEL` | No | Defaults to `gpt-realtime`. |
+| `TWILIO_*`, `PUBLIC_MEDIA_STREAM_URL` | No | Placeholders for real PSTN dialing — **not implemented yet**, see below. |
+
+`npm run build` does not need `OPENAI_API_KEY` set — the key is only read at
+request time inside route handlers, never at module load or build time.
+
+## Important context for future changes
+
+- **The "business" side of the call is simulated.** `api/simulate-business`
+  has an LLM roleplay the person answering the phone so the full loop is
+  demoable without a real phone line. Real outbound calling would replace
+  this with Twilio Voice + a media-stream bridge (see the README) — that
+  bridge needs a long-lived WebSocket connection, which does not fit a
+  typical serverless Next.js host, so it will likely need its own small
+  always-on service rather than living in `app/api`.
+- **The realtime voice connection is browser -> OpenAI directly**, via
+  WebRTC, using a short-lived client secret minted by
+  `api/realtime/session`. The Next.js server never proxies the audio.
+- **Never commit `.env.local` or any real API key.** The repo is public;
+  `.gitignore` already excludes `.env`, `.env.local`, and any `.env*.local`.
+- **There are no automated tests yet.** Verify changes by running `npm run
+  dev` and walking through: brief a call -> live call page connects and a
+  transcript appears -> hang up -> summary page shows content. `npm run
+  lint`, `npm run typecheck`, and `npm run build` should all stay clean —
+  CI (`.github/workflows/ci.yml`) runs all three on every push/PR to `main`.
+
+## Workflow
+
+GitHub is the source of truth. Development happens by cloning fresh into
+whatever session/device is doing the work — there is no local working copy
+to keep in sync, so don't assume any prior local state exists. Commit and
+push directly; there's no branch-protection or review gate, just CI as a
+safety net.
