@@ -215,26 +215,61 @@ h3,
   font-size: 14px;
 }
 
-.features {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+.how {
   padding-bottom: 80px;
 }
 
-.feature {
+.section-head {
+  padding-bottom: 28px;
+  max-width: 560px;
+}
+
+.section-head h2 {
+  font-size: clamp(28px, 3.6vw, 42px);
+  margin: 14px 0 10px;
+}
+
+.section-head .lede {
+  font-size: 16px;
+  max-width: none;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
   padding: 22px;
   border-radius: 22px;
   background: rgba(255, 250, 243, 0.65);
   border: 1px solid var(--line);
 }
 
-.feature h3 {
-  margin: 0 0 8px;
-  font-size: 22px;
+.step-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Fraunces", serif;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 
-.feature p {
+.step h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.step p {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
@@ -397,10 +432,19 @@ ul.clean {
 
 @media (max-width: 860px) {
   .hero,
-  .features,
   .form-grid,
   .live-layout,
   .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .steps {
     grid-template-columns: 1fr;
   }
 }
