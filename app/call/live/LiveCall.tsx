@@ -104,8 +104,7 @@ export default function LiveCall() {
           send({
             type: "response.create",
             response: {
-              instructions:
-                "The call just connected. Greet them and make the traveler's request now.",
+              instructions: `The call just connected. Greet them and make the traveler's request now. Speak only in ${brief.localLanguage} — this is the very first thing you say on the call, so do not default to any other language.`,
             },
           });
         });
