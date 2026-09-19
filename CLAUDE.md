@@ -24,15 +24,18 @@ app/
   call/page.tsx                Step 1: brief the call (form -> sessionStorage)
   call/live/LiveCall.tsx        Step 2: the actual live call (WebRTC to OpenAI Realtime)
   call/summary/page.tsx        Step 3: post-call summary + full transcript
+  enter/page.tsx                Early-access passcode entry page (see below)
   api/realtime/session/route.ts    Mints a short-lived OpenAI Realtime client secret
   api/simulate-business/route.ts   Roleplays the "business" side of the call (demo only)
   api/summary/route.ts             Turns the transcript into a structured summary
   api/translate/route.ts           One-off text translation for the live transcript
+  api/access/route.ts              Checks the passcode, sets the access cookie
 lib/
   languages.ts    Dropdown options (traveler/local languages, business types)
   openai.ts       OpenAI header/model helpers + the `end_call` tool definition
   prompts.ts      All LLM prompt strings (agent, business simulator, summary)
   types.ts        Shared types + sessionStorage read/write helpers
+middleware.ts     Early-access passcode gate (see below)
 ```
 
 ## Commands
@@ -54,6 +57,7 @@ API routes (the landing page and static parts build/run fine without it).
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Yes | Read server-side only, in `lib/openai.ts`. Never expose this to the client. |
 | `OPENAI_REALTIME_MODEL` | No | Defaults to `gpt-realtime`. |
+| `SITE_PASSCODE` | No | Gates the whole site behind a shared passcode when set — see below. Unset = gate is off. |
 | `TWILIO_*`, `PUBLIC_MEDIA_STREAM_URL` | No | Placeholders for real PSTN dialing — **not implemented yet**, see below. |
 
 `npm run build` does not need `OPENAI_API_KEY` set — the key is only read at
@@ -73,6 +77,12 @@ request time inside route handlers, never at module load or build time.
   `api/realtime/session`. The Next.js server never proxies the audio.
 - **Never commit `.env.local` or any real API key.** The repo is public;
   `.gitignore` already excludes `.env`, `.env.local`, and any `.env*.local`.
+- **The site is gated by a shared passcode (`middleware.ts` + `app/enter` +
+  `api/access`) while it's still early-access only.** This is deliberately
+  not real authentication — just a cookie check against `SITE_PASSCODE` — to
+  stop random visitors from running up the OpenAI bill on the public URL.
+  It should stay in place until there's a real reason to open the site up
+  (and real rate limiting/auth to go with it), not be removed casually.
 - **There are no automated tests yet.** Verify changes by running `npm run
   dev` and walking through: brief a call -> live call page connects and a
   transcript appears -> hang up -> summary page shows content. `npm run
