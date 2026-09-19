@@ -96,3 +96,22 @@ whatever session/device is doing the work — there is no local working copy
 to keep in sync, so don't assume any prior local state exists. Commit and
 push directly; there's no branch-protection or review gate, just CI as a
 safety net.
+
+## Codebase map (graphify)
+
+At the start of a session touching more than one or two files, it's worth
+building a quick structural map of the repo instead of reading files
+one-by-one to figure out what calls what:
+
+```bash
+pip install graphifyy --break-system-packages   # or: uv tool install graphifyy
+graphify update .                                # deterministic, tree-sitter based, no LLM/API cost, ~1s
+```
+
+This writes `graphify-out/graph.json`, `graph.html` (open the HTML in a
+browser for an interactive view), and `GRAPH_REPORT.md` (god nodes,
+communities, cross-file call edges, isolated/undocumented symbols). It's
+gitignored — regenerate it fresh each session with the command above rather
+than trusting a committed copy, since it goes stale the moment code changes.
+Useful follow-ups: `graphify query "<question>"`, `graphify explain "X"`,
+`graphify affected "X"` (see `graphify --help`).
