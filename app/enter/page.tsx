@@ -1,12 +1,20 @@
 "use client";
 
 import { FormEvent, Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+
+function safeNext(value: string | null) {
+  // Only ever redirect to a local path, never off-site (this comes from a
+  // query param, so it's attacker-controllable — guard against open redirects).
+  if (value && value.startsWith("/") && !value.startsWith("//")) {
+    return value;
+  }
+  return "/";
+}
 
 function EnterForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  const next = safeNext(searchParams.get("next"));
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,8 +33,10 @@ function EnterForm() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "That code is not correct.");
       }
-      router.push(next);
-      router.refresh();
+      // A hard redirect, not the client router: this guarantees a fresh
+      // request that re-checks the just-set cookie through middleware,
+      // rather than relying on a client-side transition to catch up.
+      window.location.href = next;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
@@ -42,7 +52,9 @@ function EnterForm() {
         <label className="field">
           Access code
           <input
+            name="code"
             autoFocus
+            autoComplete="off"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Enter the code you were given"
