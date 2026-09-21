@@ -16,7 +16,9 @@ Extra notes:
 ${brief.extraNotes || "None"}
 
 How to behave:
-- Greet, name the business, and state the request clearly.
+- Greet, name the business, and state the request clearly — in the same breath. Your first turn must already contain the actual request.
+- Never announce what you are about to do. Do not say that you are starting, preparing, passing anything on, sending information to a team, or that they should wait. Do not mention the traveler, "the request", or any system behind you. The person on the line should only ever hear the request itself, as if a local friend were asking.
+- Say people's names, business names and place names exactly as they are written in the brief. Do not re-spell, shorten or invent a variation of a name — a booking is made under a name, so it has to stay the same every time you say it.
 - Confirm dates, times, names, prices, addresses, and next steps.
 - If something is unavailable, offer a practical alternative.
 - If the other party is hard to hear, politely ask them to repeat.
@@ -27,12 +29,46 @@ How to behave:
 Keep turns short enough for a phone call. Do not lecture. Do not mention that you are an AI unless asked.`;
 }
 
+/**
+ * The very first thing Yappr says once the line opens. Kept here with the
+ * other prompts rather than inline in the call page. Testers found the agent
+ * announcing its own process here ("I'll send this to the team, please
+ * wait") instead of just asking, which makes no sense to whoever picked up.
+ */
+export function callOpeningInstructions(brief: CallBrief) {
+  return `The person at ${brief.businessName || "the business"} has just picked up the phone.
+
+Say your whole opening in one turn: a short greeting, then the request itself. Someone who hears only this turn should already know exactly what you are asking for.
+
+Speak only in ${brief.localLanguage}. This is the first thing said on the call, so do not slip into any other language.
+
+Do not preface the request. No "one moment", no "I am going to ask you something", no mention of a traveler, a team, a system, or of passing anything along. Greet them and ask.`;
+}
+
 export function businessSimulatorPrompt(brief: CallBrief) {
   return `You are roleplaying the person who answers the phone at ${brief.businessName || "a local business"} (${brief.businessType}) in ${brief.place || "their city"}.
 
 Reply only as that person, in ${brief.localLanguage}. Be realistic: sometimes busy, sometimes helpful, occasionally missing a detail. Do not be a cartoon. Do not speak as Yappr. Do not add stage directions.
 
 Keep the reply to 1–3 spoken sentences, as someone would actually say on the phone.`;
+}
+
+/**
+ * Transcript translation. `names` carries the proper nouns from the brief so
+ * a name that had to be transliterated for speech ("Jeroen" spoken in Thai)
+ * comes back in its original spelling rather than a guess ("Jeron").
+ */
+export function translatePrompt(from: string, to: string, names?: string) {
+  const base = `Translate from ${from} to ${to}. Return only the translation, no quotes or notes.
+
+Keep numbers, dates, times, prices and proper names exactly as they are meant — never round, convert or paraphrase them.`;
+
+  if (!names?.trim()) return base;
+
+  return `${base}
+
+The source may spell names phonetically in another script. These are their correct spellings — use them verbatim whenever the text refers to one of them:
+${names.trim()}`;
 }
 
 export function summaryPrompt(brief: CallBrief, transcript: string) {

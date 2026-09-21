@@ -14,6 +14,7 @@ import {
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
+import { callOpeningInstructions } from "@/lib/prompts";
 
 type RealtimeEvent = {
   type: string;
@@ -104,9 +105,7 @@ export default function LiveCall() {
           setStatus("On the line");
           send({
             type: "response.create",
-            response: {
-              instructions: `The call just connected. Greet them and make the traveler's request now. Speak only in ${brief.localLanguage} — this is the very first thing you say on the call, so do not default to any other language.`,
-            },
+            response: { instructions: callOpeningInstructions(brief) },
           });
         });
         dc.addEventListener("message", (event) => {
@@ -182,11 +181,23 @@ export default function LiveCall() {
     return next;
   }
 
+  /**
+   * The names the traveler actually wrote, so the translator can restore
+   * their spelling instead of guessing one back out of the local script.
+   */
+  function nameHints() {
+    return [brief.businessName, brief.place, brief.goal, brief.extraNotes]
+      .map((value) => value?.trim())
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 600);
+  }
+
   async function translate(text: string, from: string, to: string) {
     const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, from, to }),
+      body: JSON.stringify({ text, from, to, names: nameHints() }),
     });
     const data = await res.json();
     return (data.translation as string) || text;

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { chatCompletion, chatText, errorResponse } from "@/lib/openai";
+import { translatePrompt } from "@/lib/prompts";
 
 export async function POST(req: Request) {
   try {
-    const { text, from, to } = (await req.json()) as {
+    const { text, from, to, names } = (await req.json()) as {
       text: string;
       from: string;
       to: string;
+      names?: string;
     };
 
     if (!text?.trim()) {
@@ -22,10 +24,7 @@ export async function POST(req: Request) {
         model: "gpt-4o-mini",
         temperature: 0.2,
         messages: [
-          {
-            role: "system",
-            content: `Translate from ${from} to ${to}. Return only the translation, no quotes or notes.`,
-          },
+          { role: "system", content: translatePrompt(from, to, names) },
           { role: "user", content: text },
         ],
       },
