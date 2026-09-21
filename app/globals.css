@@ -395,6 +395,32 @@ textarea {
   font-size: 14px;
 }
 
+.request {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+
+.request-goal {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.request-note {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.request .meta {
+  margin-top: 8px;
+}
+
 .toggle {
   display: flex;
   align-items: center;

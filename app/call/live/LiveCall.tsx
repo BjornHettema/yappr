@@ -13,6 +13,7 @@ import {
   type TranscriptLine,
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
+import CallRequest from "@/app/components/CallRequest";
 
 type RealtimeEvent = {
   type: string;
@@ -330,9 +331,7 @@ export default function LiveCall() {
           <p className="meta">
             {brief.place || "Local business"} · {brief.localLanguage}
           </p>
-          <p className="lede" style={{ fontSize: 15 }}>
-            {brief.goal}
-          </p>
+          <CallRequest brief={brief} />
           <div className="toggle">
             <div>
               <strong>Listen live</strong>

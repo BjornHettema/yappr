@@ -13,6 +13,7 @@ import {
   type TranscriptLine,
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
+import CallRequest from "@/app/components/CallRequest";
 
 export default function SummaryPage() {
   const [brief] = useState<CallBrief>(() => loadJson(CALL_BRIEF_KEY, defaultBrief));
@@ -39,6 +40,7 @@ export default function SummaryPage() {
 
       <div className="summary-grid">
         <section className="card panel">
+          <CallRequest brief={brief} />
           <h2>What was agreed</h2>
           <ul className="clean">
             {(summary.agreed || []).map((item) => (
