@@ -22,6 +22,11 @@
   /* One radius scale, applied by role and nothing else:
      interactive controls are full pills, panels and cards use --radius-lg,
      speech bubbles and inset blocks --radius-md, form fields --radius-sm. */
+  /* One easing curve for the whole site. The browser default `ease` is
+     symmetrical and reads mechanical; this decelerates, which is what a
+     surface settling into place actually looks like. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
   --radius-sm: 14px;
   --radius-md: 20px;
   --radius-lg: 28px;
@@ -187,7 +192,8 @@ p {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out),
+    background 160ms var(--ease-out);
 }
 
 .btn-primary {
@@ -256,7 +262,7 @@ p {
   box-shadow: var(--lift-lg), inset 0 0 0 1px var(--hairline);
   /* A card called "postcard" may as well sit like one. */
   transform: rotate(-1.2deg);
-  transition: transform 300ms ease;
+  transition: transform 300ms var(--ease-out);
   min-height: 300px;
   overflow: hidden;
 }
@@ -514,7 +520,7 @@ textarea {
   padding: 14px 15px;
   color: var(--ink);
   min-height: 50px;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
 input::placeholder,
@@ -632,6 +638,15 @@ textarea:user-invalid {
   max-width: 78%;
 }
 
+.line {
+  animation: line-in 200ms var(--ease-out) both;
+}
+
+@keyframes line-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
 .who {
   font-size: 12px;
   font-weight: 700;
@@ -696,6 +711,7 @@ textarea:user-invalid {
 }
 
 .error {
+  animation: line-in 200ms var(--ease-out) both;
   color: #8c1a12;
   background: #fdeae5;
   border-radius: var(--radius-sm);
@@ -812,7 +828,9 @@ ul.clean li {
   }
 
   .wave span,
-  .fade-in {
+  .fade-in,
+  .line,
+  .error {
     animation: none;
   }
 
@@ -826,7 +844,7 @@ ul.clean li {
 }
 
 .fade-in {
-  animation: fade-in 420ms ease-out both;
+  animation: fade-in 420ms var(--ease-out) both;
 }
 
 @keyframes fade-in {
