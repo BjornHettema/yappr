@@ -15,6 +15,7 @@ import {
 import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
 import { callOpeningInstructions } from "@/lib/prompts";
+import { testLoggingActive } from "@/lib/testLog";
 
 type RealtimeEvent = {
   type: string;
@@ -54,6 +55,7 @@ export default function LiveCall() {
   const dcRef = useRef<RTCDataChannel | null>(null);
   const linesRef = useRef<TranscriptLine[]>([]);
   const hangingUp = useRef(false);
+  const startedAt = useRef(Date.now());
   const awaitingBusiness = useRef(false);
   const agentBuffer = useRef("");
 
@@ -297,6 +299,27 @@ export default function LiveCall() {
     setCoach("");
   }
 
+  /**
+   * TEMPORARY - USER TESTING PHASE ONLY. Sends the finished session to
+   * /api/test-log so it can be read back as research. No-ops unless the flag
+   * is on, and never blocks or breaks the end of a call. See lib/testLog.ts.
+   */
+  function recordTestSession(summary: unknown) {
+    if (!testLoggingActive()) return;
+    void fetch("/api/test-log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        brief,
+        lines: linesRef.current,
+        summary,
+        startedAt: startedAt.current,
+      }),
+    }).catch(() => {
+      /* research data is never worth interrupting a call for */
+    });
+  }
+
   async function hangUp() {
     if (hangingUp.current) return;
     hangingUp.current = true;
@@ -315,6 +338,7 @@ export default function LiveCall() {
       });
       const summary = await res.json();
       saveJson(SUMMARY_KEY, summary);
+      recordTestSession(summary);
     } catch {
       saveJson(SUMMARY_KEY, {
         headline: "Call ended",

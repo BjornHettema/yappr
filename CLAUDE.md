@@ -92,6 +92,12 @@ request time inside route handlers, never at module load or build time.
 - **Transcript lines render through `app/components/TranscriptLineView.tsx`** in
   both the live call and the summary page — don't hand-roll the `<article
   className="line …">` markup again; the two copies had already drifted once.
+- **`TESTING-ONLY.md` at the repo root is live right now.** Yappr records real
+  call sessions (brief + transcript + summary) while
+  `NEXT_PUBLIC_ENABLE_TEST_LOGGING=true`. That is personal data, it is
+  temporary, and it expires on 2026-12-31. Read that file before touching
+  `lib/testLog.ts`, `app/api/test-log/`, or the `.notice` block on the brief
+  form, and do not remove the tester notice while leaving the recording on.
 - **There are no automated tests yet.** Verify changes by running `npm run
   dev` and walking through: brief a call -> live call page connects and a
   transcript appears -> hang up -> summary page shows content. `npm run

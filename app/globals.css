@@ -833,6 +833,17 @@ textarea:user-invalid {
   font-size: 13px;
 }
 
+/* TEMPORARY - USER TESTING PHASE ONLY. Remove with the logging feature. */
+.notice {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--tint-gold-strong);
+  box-shadow: inset 0 0 0 1px var(--gold-edge);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .toggle {
   display: flex;
   align-items: center;

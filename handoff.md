@@ -68,6 +68,18 @@ Every pair was measured and passes AA. Lowest are white on the terracotta fill (
 **Still open, deliberately not done:**
 - **No images anywhere.** taste-skill: "a pure-text page is not minimalism, it is incomplete work." No image-generation tool was available in the session, and stock placeholders on a live product would be worse than nothing. Now tracked on the status dashboard under Now: needs a hero image plus two or three supporting shots, generated or licensed.
 
+### 7. Test-session logging (TEMPORARY)
+
+Jeroen asked for call transcripts to be captured as user-testing data. Built with three safeguards, because this records personal data: names, what someone wants, and sometimes health details.
+
+- **Off by default.** Nothing is recorded unless `NEXT_PUBLIC_ENABLE_TEST_LOGGING=true`.
+- **It expires on 2026-12-31.** After that `/api/test-log` stores nothing and warns instead, so forgetting to remove it fails closed rather than quietly collecting data for a year.
+- **One flag drives both the recording and the tester notice** on the brief form, so it is not possible to record people silently. Do not split them.
+
+Destinations: a one-line `[YAPPR-TEST-LOG]` JSON record on stdout (Vercel runtime logs, short retention, fallback only) and, if `TEST_LOG_WEBHOOK_URL` is set, a POST to that URL. **Jeroen needs to set the webhook before inviting testers** or most sessions will be lost.
+
+`TESTING-ONLY.md` at the repo root is the removal checklist, and `CLAUDE.md` points at it. Every file involved carries a `TEMPORARY - USER TESTING PHASE ONLY` banner.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.

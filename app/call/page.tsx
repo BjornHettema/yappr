@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { businessTypes, languageGroups } from "@/lib/languages";
 import { CALL_BRIEF_KEY, defaultBrief, saveJson, type CallBrief } from "@/lib/types";
+import { testLoggingActive } from "@/lib/testLog";
 
 function LanguageOptions() {
   return (
@@ -138,6 +139,14 @@ export default function CallSetupPage() {
             Start the call
           </button>
         </div>
+        {testLoggingActive() ? (
+          /* TEMPORARY - USER TESTING PHASE ONLY. Goes when the logging does. */
+          <p className="notice">
+            <strong>While Yappr is being tested,</strong> what you type here and the
+            conversation on the call are saved so we can see how it went and improve it.
+            Please don&apos;t include anything you would not want us to read.
+          </p>
+        ) : null}
         <p className="meta">
           This first version runs a live GPT Realtime session with a simulated local on the other
           end, so you can hear and read the full loop without a Twilio number. Add Twilio credentials
