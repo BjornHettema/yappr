@@ -100,6 +100,41 @@ Also checked that every CSS class in `globals.css` is still referenced from JSX 
 
 **Its one concrete finding, still open:** `LiveCall()` is by a distance the most connected thing in the codebase — 19 edges and 11 nested functions in a single ~450-line client component handling WebRTC setup, transcript state, translation, the business simulator, coaching, hangup, summary and test logging. Nothing is broken, but it is the obvious next refactor if anyone touches that file substantially. Splitting the realtime connection and the transcript state into hooks is the natural cut.
 
+### 9. Tester feedback form (TEMPORARY, commit `9fab1f1`)
+
+`app/components/TestFeedback.tsx` on the summary page, behind the same
+`testLoggingActive()` flag as the session recording — one flag drives the
+tester notice, the recording and the form, and splitting them would make it
+possible to collect silently.
+
+Three questions. *Did Yappr get what you needed?* is comparable across testers
+and can be read against the `outcome` the summary recorded — a tester saying
+"partly" where the summary says "booked" is the finding. *Would you have made
+this call yourself?* is the product thesis in one question; if most say they'd
+have just phoned, this is a convenience rather than a need. Then one open box,
+phrased as "anything confusing, wrong, or missing" rather than "what did you
+think", because the first gets specifics and the second gets "nice!".
+
+**Willingness to pay is deliberately not asked.** Stated willingness,
+collected free, seconds after a success, is the least reliable number in
+research. That belongs in a conversation, and the ADR already assumes prepaid
+credits.
+
+A `sessionId` is minted at the start of the call, stored in `sessionStorage`
+and sent with both records, so a comment can be read next to the transcript it
+is about. The Apps Script now writes feedback to its own **Feedback** tab;
+`sessionId` was *appended* to the end of the session columns rather than
+inserted, so rows written before today stay aligned.
+
+**Jeroen must re-paste `docs/testing/google-sheet-collector.gs` into the Sheet
+and redeploy a new version** (Deploy → Manage deployments → pencil → New
+version), or feedback rows keep landing on the sessions tab as near-empty
+rows. The URL does not change. Until then, one smoke-test row from this
+session's live check is sitting on the first tab and can be deleted.
+
+Verified live on the deployed site: chips, the disabled-until-answered send
+button, the thank-you state and a `200` from `/api/test-log`.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
@@ -109,7 +144,7 @@ Also checked that every CSS class in `globals.css` is still referenced from JSX 
 
 ## What it should do next
 
-1. **Get 3–5 real non-technical-traveler testers on the deployed app.** This is the one open item nothing else substitutes for. One friend's manual test already produced a real feature (item 2 above) and, indirectly, the three prompt bugs. Claude can draft the invite and a lightweight feedback form.
+1. **Get 3–5 real non-technical-traveler testers on the deployed app.** This is the one open item nothing else substitutes for. One friend's manual test already produced a real feature (item 2 above) and, indirectly, the three prompt bugs. The instrumentation is now finished — sessions and feedback both land in the Sheet — so the only missing ingredient is testers. Claude can draft the invite.
 2. **Decide on the summary page's language.** Content comes back in the traveler's language but the headings are hardcoded English ("What was agreed", "Still open", "Next steps"). For a Dutch or Japanese traveler that reads half-finished, and the target user is explicitly non-technical. Not yet discussed with Jeroen.
 3. Longer-term, unstarted: real outbound calling via Twilio Voice + a media-stream bridge (needs its own always-on service, doesn't fit serverless Next.js — see `README.md`), then a shorter custom domain.
 
