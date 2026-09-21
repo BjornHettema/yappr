@@ -23,21 +23,25 @@ export default function LivePostcard() {
   const example = callExamples[index];
 
   return (
-    <aside className="card postcard">
-      <div className="meta">
-        Live with {example.business} · {example.place} · {example.language}
+    <aside className="postcard">
+      <div className="postcard-head">
+        <span className="live-dot" aria-hidden="true" />
+        On the line with {example.business} · {example.place}
       </div>
+
       <div className="wave" aria-hidden="true">
         {Array.from({ length: 12 }).map((_, i) => (
           <span key={i} />
         ))}
       </div>
-      <p className="original fade-in" lang={example.lang} key={`o${index}`}>
-        {example.original}
-      </p>
-      <p className="translation fade-in" key={`t${index}`}>
-        {example.translation}
-      </p>
+
+      <div className="bubble fade-in" key={index}>
+        <div className="who">{example.language}</div>
+        <p className="original" lang={example.lang}>
+          {example.original}
+        </p>
+        <p className="translation">{example.translation}</p>
+      </div>
     </aside>
   );
 }

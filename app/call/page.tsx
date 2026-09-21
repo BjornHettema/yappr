@@ -44,24 +44,31 @@ export default function CallSetupPage() {
 
       <form className="card panel" onSubmit={onSubmit}>
         <div className="form-grid">
-          <label className="field">
-            Your language
-            <select
-              value={brief.travelerLanguage}
-              onChange={(e) => update("travelerLanguage", e.target.value)}
-            >
-              <LanguageOptions />
-            </select>
+          {/* The request first: it's the only part that needs thought. */}
+          <label className="field full">
+            What you need
+            <textarea
+              required
+              placeholder="Table for two tonight at 7pm, window if they have one. Name under Maya."
+              value={brief.goal}
+              onChange={(e) => update("goal", e.target.value)}
+            />
           </label>
-          <label className="field">
-            Local language
-            <select
-              value={brief.localLanguage}
-              onChange={(e) => update("localLanguage", e.target.value)}
-            >
-              <LanguageOptions />
-            </select>
+          <label className="field full">
+            Anything else Yappr should know
+            <textarea
+              placeholder="Allergy to shellfish. Prefer outside. Don't mention the hotel."
+              value={brief.extraNotes}
+              onChange={(e) => update("extraNotes", e.target.value)}
+            />
           </label>
+
+          <hr className="rule" />
+          <div className="fieldset-head">
+            <h2>Who to call</h2>
+            <span className="meta">The phone number is optional for now</span>
+          </div>
+
           <label className="field">
             Business name
             <input
@@ -100,22 +107,30 @@ export default function CallSetupPage() {
               onChange={(e) => update("place", e.target.value)}
             />
           </label>
-          <label className="field full">
-            What you need
-            <textarea
-              required
-              placeholder="Table for two tonight at 7pm, window if they have one. Name under Maya."
-              value={brief.goal}
-              onChange={(e) => update("goal", e.target.value)}
-            />
+
+          <hr className="rule" />
+          <div className="fieldset-head">
+            <h2>Languages</h2>
+            <span className="meta">Yours is for the transcript; theirs is spoken on the call</span>
+          </div>
+
+          <label className="field">
+            Your language
+            <select
+              value={brief.travelerLanguage}
+              onChange={(e) => update("travelerLanguage", e.target.value)}
+            >
+              <LanguageOptions />
+            </select>
           </label>
-          <label className="field full">
-            Anything else Yappr should know
-            <textarea
-              placeholder="Allergy to shellfish. Prefer outside. Don't mention the hotel."
-              value={brief.extraNotes}
-              onChange={(e) => update("extraNotes", e.target.value)}
-            />
+          <label className="field">
+            Local language
+            <select
+              value={brief.localLanguage}
+              onChange={(e) => update("localLanguage", e.target.value)}
+            >
+              <LanguageOptions />
+            </select>
           </label>
         </div>
         <div className="actions">
