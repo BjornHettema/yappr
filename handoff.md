@@ -32,6 +32,16 @@ These are the substantive finds, and **none of them are visible in static code r
 
 **Watch this one.** It is the failure mode with real consequences for this product, and a prompt rule is a soft guarantee. The last live run was clean, but one clean run is not proof — re-test invention specifically whenever the agent prompt or the model changes, and consider whether a real check (e.g. diffing the summary's `agreed` items against the brief) belongs in the app.
 
+### 4. Language list, homepage and a visual redesign (commits `a0e9767` … `f12e31e`)
+
+- **One shared language list of 47** (`lib/languages.ts`), replacing separate traveler/local lists that made an Indonesian speaker in Thailand unable to use the app at all. Grouped by region for the dropdown. Verified with an Indonesian → Thai live call.
+- **The homepage example rotates** (`lib/examples.ts` + `app/components/LivePostcard.tsx`), picked in an effect so the page stays statically prerendered.
+- **Redesign.** The site read as a stack of identical rounded rectangles: every surface had the same border, radius and shadow. Now: "How it works" is a dotted route between numbered milestones (vertical on a phone) rather than four equal cards; transcript lines are speech bubbles leaning to the speaker's side; surfaces use layered shadows and hairline insets instead of 1px borders; the background is a warm wash; the primary action is terracotta; buttons and inputs are >= 50px for thumbs. The brief form is grouped with **the request first**, so you say what you need before answering six questions about the business.
+- **Accessibility work that came with it**: focus-visible rings (there were none at all), `prefers-reduced-motion` (the waveform animated forever regardless), `:autofill` highlighting, `:user-invalid` so required fields only complain after interaction, and two measured contrast fixes — input borders were 1.3:1 (WCAG 1.4.11 wants 3:1 for a component boundary) and placeholders were 2.6:1. Every other new pair was measured and passes AA; white on the terracotta button is 4.8:1.
+- The `design` and `modern-web-guidance` plugins are now installed and were used for this. `modern-web-guidance` is worth running before any CSS work — it's how the container-query and `:autofill` patterns got in.
+
+**Not verified:** the final visual pass after `f12e31e` (the contrast fixes). The linked computer dropped off the bridge before the browser could be pointed at the deployed site, so the last confirmed-good screenshots are from `c2b4e8e`. The changes since are colour values only, but confirm them on screen before showing anyone.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
