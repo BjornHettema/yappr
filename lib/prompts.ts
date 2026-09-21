@@ -95,12 +95,21 @@ ${brief.goal}
 Transcript (original + translation):
 ${transcript}
 
+Pick the outcome by what the call actually achieved, not by what was asked for:
+- "booked" only when something was actually reserved, held or scheduled.
+- "answered" when the traveler wanted information and got it. A key-collection
+  arrangement explained, opening hours confirmed, an item found, a price given.
+  Nothing was reserved, but the traveler now knows what they needed to know.
+- "pending" when the local has to check or call back.
+- "unavailable" when the answer was no.
+- "unclear" when the call did not settle the question.
+
 Only report what the transcript actually shows. Every item in "agreed" must be something the local confirmed in their own words — not something Yappr asked for and never got an answer to. If the call and the traveler's original request drifted apart, say so in "unresolved" rather than smoothing it over.
 
 Write in ${brief.travelerLanguage}. Return JSON only:
 {
   "headline": "one-line outcome",
-  "outcome": "booked | pending | unavailable | unclear",
+  "outcome": "booked | answered | pending | unavailable | unclear",
   "agreed": ["concrete facts that were confirmed"],
   "unresolved": ["open questions"],
   "nextSteps": ["what the traveler should do"],

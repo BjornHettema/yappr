@@ -23,6 +23,7 @@ export default function SummaryPage() {
   const outcomeLabel = useMemo(() => {
     const map: Record<string, string> = {
       booked: "Confirmed",
+      answered: "You have your answer",
       pending: "Waiting on them",
       unavailable: "Not available",
       unclear: "Needs a follow-up",
