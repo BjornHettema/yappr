@@ -86,6 +86,16 @@ Destinations: a one-line `[YAPPR-TEST-LOG]` JSON record on stdout (Vercel runtim
 
 Two lessons for whoever reads the research: rows before `a6948d9` use the old enum, and the `commitMessage` column carried the full commit body until `c5fda36` (subject line only after that).
 
+### 8. Cleanup pass (commit `9953fb5`)
+
+`npx knip` after several sessions of building found seven unused exports and one dead constant, all drift rather than mistakes: `businessTypeLabel`, `speakerLabel`, `openaiHeaders`, `CHAT_COMPLETIONS_URL` and `OpenAIRequestError` were each only used inside their own file and are no longer exported; the flattened `languages` array in `lib/languages.ts` had been unused since the dropdown moved to grouped optgroups and is gone; `THEME_KEY` moved to `lib/types.ts` so `ThemeToggle` and the pre-paint script in `layout.tsx` read one constant instead of two copies of the same string.
+
+Also checked that every CSS class in `globals.css` is still referenced from JSX — the redesign left no orphan styles.
+
+**`eslint-config-next` is knip's one false positive** and always will be: it is consumed dynamically via `FlatCompat.extends()` in `eslint.config.mjs`, which static analysis cannot follow. Don't remove it, and don't spend time on it again.
+
+`npx knip` is worth running at the end of any session that refactors across files.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
