@@ -43,7 +43,7 @@ These are the substantive finds, and **none of them are visible in static code r
 
 **One improvement left undone, deliberately:** the Google Fonts `<link>` in `app/layout.tsx` is a render-blocking third-party request on every first visit — the slowest thing on the page over hotel wifi. It should be `next/font/google` (self-hosted, metric-matched, no FOUT). **It cannot be done from this cloud sandbox**: the egress policy 403s `fonts.googleapis.com`, so `next/font` fails at build and the font files can't be downloaded to self-host either. `globals.css` is already written as `var(--font-sans, "Outfit")`, so switching is a one-file change in `layout.tsx` from a machine with open network. Verify the build before pushing — an unbuildable push just fails the deploy.
 
-**Not verified:** the final visual pass after `f12e31e` (the contrast fixes). The linked computer dropped off the bridge before the browser could be pointed at the deployed site, so the last confirmed-good screenshots are from `c2b4e8e`. The changes since are colour values only, but confirm them on screen before showing anyone.
+**Verified on the deployed site** at `022b03e`: homepage and brief form at 390px and desktop, plus a full live call (Dutch → Thai) to see the new transcript bubbles in place. That walkthrough caught one thing worth knowing — moving the primary action to terracotta had made **"Hang up" the loudest button on the call screen**, sitting next to "Send note" at the same size. It now has its own outlined red treatment (`.btn-danger`). Lesson for next time: after any change to the button palette, look at every screen that has a destructive action on it, not just the marketing page.
 
 ## What failed / known blockers (standing)
 
