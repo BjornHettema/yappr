@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces, Outfit } from "next/font/google";
+import ThemeToggle from "@/app/components/ThemeToggle";
 import "./globals.css";
 
 /**
@@ -39,9 +40,25 @@ export const metadata: Metadata = {
     "Tell Yappr what you need. It calls local businesses in their language, shows a live transcript, and summarizes the conversation.",
 };
 
+/**
+ * Resolves the theme before the first paint, so nobody sees a flash of the
+ * wrong one. It has to be inline and blocking for that reason: a deferred
+ * script or a useEffect both run after the browser has already painted.
+ * No stored choice means follow the operating system.
+ */
+const themeScript = `(function(){try{var s=localStorage.getItem("yappr.theme");var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";}catch(e){document.documentElement.dataset.theme="light";}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable}`}
+      // data-theme is written by the script below before React hydrates.
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <div className="shell">
           <header className="nav">
@@ -49,7 +66,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="mark">Y</span>
               Yappr
             </Link>
-            <span className="tag">call like a local</span>
+            <div className="nav-end">
+              <span className="tag">call like a local</span>
+              <ThemeToggle />
+            </div>
           </header>
           {children}
           <footer className="footer">Yappr places the call so you do not have to perform the language.</footer>

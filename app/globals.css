@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* Brand hues. These are the identity and do not change between modes;
      the tokens below decide how each one is used on a given background. */
@@ -81,54 +81,53 @@
  * Every pair below was measured; the lowest is white on the terracotta fill
  * at 4.8:1 and the field border at 4.0:1 against its field.
  */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14100d;
-    --surface: #1e1815;
-    --surface-2: #262019;
-    --surface-tint: #241d18;
-    --text: #f2e9dd;
-    --text-muted: #b0a396;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14100d;
+  --surface: #1e1815;
+  --surface-2: #262019;
+  --surface-tint: #241d18;
+  --text: #f2e9dd;
+  --text-muted: #b0a396;
 
-    --accent-text: #e8845a;
-    --teal-text: #5fc0b4;
+  --accent-text: #e8845a;
+  --teal-text: #5fc0b4;
 
-    --line: rgba(242, 233, 221, 0.14);
-    --hairline: rgba(242, 233, 221, 0.08);
-    --field-bg: #201a16;
-    --field-border: rgba(242, 233, 221, 0.42);
-    --field-border-hover: rgba(242, 233, 221, 0.62);
-    --placeholder: rgba(242, 233, 221, 0.52);
-    --ghost-bg: rgba(242, 233, 221, 0.06);
-    --selection: rgba(226, 132, 90, 0.28);
-    --route: rgba(232, 132, 90, 0.4);
-    --accent-edge: rgba(232, 132, 90, 0.18);
-    --accent-halo: rgba(0, 0, 0, 0.5);
-    --gold-edge: rgba(226, 185, 111, 0.3);
-    --tint-accent: rgba(232, 132, 90, 0.07);
-    --tint-teal: rgba(95, 192, 180, 0.07);
-    --tint-teal-strong: rgba(95, 192, 180, 0.14);
-    --tint-gold: rgba(226, 185, 111, 0.06);
-    --tint-gold-strong: rgba(226, 185, 111, 0.14);
-    --glow-gold: rgba(215, 161, 74, 0.12);
-    --glow-teal: rgba(31, 106, 100, 0.16);
+  --line: rgba(242, 233, 221, 0.14);
+  --hairline: rgba(242, 233, 221, 0.08);
+  --field-bg: #201a16;
+  --field-border: rgba(242, 233, 221, 0.42);
+  --field-border-hover: rgba(242, 233, 221, 0.62);
+  --placeholder: rgba(242, 233, 221, 0.52);
+  --ghost-bg: rgba(242, 233, 221, 0.06);
+  --selection: rgba(226, 132, 90, 0.28);
+  --route: rgba(232, 132, 90, 0.4);
+  --accent-edge: rgba(232, 132, 90, 0.18);
+  --accent-halo: rgba(0, 0, 0, 0.5);
+  --gold-edge: rgba(226, 185, 111, 0.3);
+  --tint-accent: rgba(232, 132, 90, 0.07);
+  --tint-teal: rgba(95, 192, 180, 0.07);
+  --tint-teal-strong: rgba(95, 192, 180, 0.14);
+  --tint-gold: rgba(226, 185, 111, 0.06);
+  --tint-gold-strong: rgba(226, 185, 111, 0.14);
+  --glow-gold: rgba(215, 161, 74, 0.12);
+  --glow-teal: rgba(31, 106, 100, 0.16);
 
-    --focus-ring: #5fc0b4;
-    --focus-halo: rgba(95, 192, 180, 0.22);
-    --autofill-fill: rgba(95, 192, 180, 0.09);
-    --ok: #4cc47d;
-    --ok-halo: rgba(76, 196, 125, 0.18);
-    --danger: #ff9a86;
-    --danger-bg: #3a1a15;
-    --danger-edge: rgba(255, 154, 134, 0.38);
-    --danger-halo: rgba(255, 154, 134, 0.18);
+  --focus-ring: #5fc0b4;
+  --focus-halo: rgba(95, 192, 180, 0.22);
+  --autofill-fill: rgba(95, 192, 180, 0.09);
+  --ok: #4cc47d;
+  --ok-halo: rgba(76, 196, 125, 0.18);
+  --danger: #ff9a86;
+  --danger-bg: #3a1a15;
+  --danger-edge: rgba(255, 154, 134, 0.38);
+  --danger-halo: rgba(255, 154, 134, 0.18);
 
-    /* Shadows do almost nothing on a dark surface, so depth comes from the
-       hairline insets already on every card, plus a deeper ambient shadow. */
-    --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --lift-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 28px rgba(0, 0, 0, 0.35);
-    --lift-lg: 0 4px 10px rgba(0, 0, 0, 0.5), 0 28px 64px rgba(0, 0, 0, 0.45);
-  }
+  /* Shadows do almost nothing on a dark surface, so depth comes from the
+     hairline insets already on every card, plus a deeper ambient shadow. */
+  --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --lift-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 28px rgba(0, 0, 0, 0.35);
+  --lift-lg: 0 4px 10px rgba(0, 0, 0, 0.5), 0 28px 64px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -228,10 +227,44 @@ p {
   box-shadow: 0 8px 16px var(--accent-halo);
 }
 
+.nav-end {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .tag {
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
+}
+
+.theme-toggle {
+  border: 0;
+  cursor: pointer;
+  background: var(--ghost-bg);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line);
+  border-radius: 999px;
+  /* Smaller than a primary control on purpose: it is a preference, not an
+     action anyone came here to take. Still a comfortable tap target. */
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.theme-toggle:hover {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--field-border-hover);
+}
+
+@media (max-width: 560px) {
+  /* The switch matters more on a phone than the tagline does. */
+  .nav-end .tag {
+    display: none;
+  }
 }
 
 /* ---------- hero ---------- */
