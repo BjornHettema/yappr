@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CALL_BRIEF_KEY,
+  SESSION_ID_KEY,
   SUMMARY_KEY,
   TRANSCRIPT_KEY,
   defaultBrief,
@@ -14,11 +15,20 @@ import {
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
+import TestFeedback from "@/app/components/TestFeedback";
 
 export default function SummaryPage() {
   const [brief] = useState<CallBrief>(() => loadJson(CALL_BRIEF_KEY, defaultBrief));
   const [summary] = useState<Summary>(() => loadJson(SUMMARY_KEY, {}));
   const [lines] = useState<TranscriptLine[]>(() => loadJson(TRANSCRIPT_KEY, []));
+  // TEMPORARY - testing phase. See TESTING-ONLY.md.
+  const [sessionId] = useState(() => {
+    try {
+      return sessionStorage.getItem(SESSION_ID_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
 
   const outcomeLabel = useMemo(() => {
     const map: Record<string, string> = {
@@ -87,6 +97,9 @@ export default function SummaryPage() {
           </div>
         </aside>
       </div>
+
+      {/* TEMPORARY - USER TESTING PHASE ONLY. Goes when the logging does. */}
+      <TestFeedback sessionId={sessionId} />
     </main>
   );
 }

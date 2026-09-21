@@ -96,8 +96,11 @@ request time inside route handlers, never at module load or build time.
   call sessions (brief + transcript + summary) while
   `NEXT_PUBLIC_ENABLE_TEST_LOGGING=true`. That is personal data, it is
   temporary, and it expires on 2026-12-31. Read that file before touching
-  `lib/testLog.ts`, `app/api/test-log/`, or the `.notice` block on the brief
-  form, and do not remove the tester notice while leaving the recording on.
+  `lib/testLog.ts`, `app/api/test-log/`, `app/components/TestFeedback.tsx`, or
+  the `.notice` block on the brief form, and do not remove the tester notice
+  while leaving the recording on. One flag (`testLoggingActive()`) gates the
+  notice, the session recording and the feedback form together — keep it that
+  way.
 - **There are no automated tests yet.** Verify changes by running `npm run
   dev` and walking through: brief a call -> live call page connects and a
   transcript appears -> hang up -> summary page shows content. `npm run

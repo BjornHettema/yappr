@@ -23,6 +23,14 @@ set aside rather than silently mixed in with newer ones.
 3. Paste the entire contents of `google-sheet-collector.gs` from this folder.
 4. Save (the disk icon). Name the project `Yappr test log` if it asks.
 
+> **The Sheet holds its own copy of this script, and a deployment is pinned to
+> a version.** Changing `google-sheet-collector.gs` in the repo changes
+> nothing until you (1) paste it in again and save, and (2) **Deploy → Manage
+> deployments →** the pencil icon **→ Version: New version → Deploy**. That
+> keeps the same URL, so nothing in Vercel changes. Saving alone is not
+> enough. If rows stop matching the columns documented below, a stale
+> deployment is the first thing to check.
+
 ## 3. Deploy it as a web app
 
 1. **Deploy → New deployment**.
@@ -87,20 +95,43 @@ should appear in the Sheet. Confirm that:
 - the `transcript` cell holds the full conversation
 - the brief form showed the testing notice before you started
 
+Then answer the three feedback questions at the bottom of the summary page and
+confirm a row appears on the **Feedback** tab with the same `sessionId` as the
+session row.
+
 If nothing arrives, look at the Vercel runtime logs for a line starting
 `[YAPPR-TEST-LOG]`. The record is always written there too, so if the line
 exists but the row does not, the problem is the webhook, not the app.
 
-## Columns
+## Two tabs
+
+The first sheet holds **call sessions**. A second tab named **Feedback** is
+created automatically the first time a tester answers the three questions on
+the summary page. Both carry a `sessionId`, so a `VLOOKUP` on that column lines
+an answer up with the call it is about. A call with no matching feedback row
+just means that tester skipped the form, which is itself worth noticing.
+
+### Sessions columns
 
 `loggedAt`, `commit`, `branch`, `environment`, `startedAt`, `durationSeconds`,
 `travelerLanguage`, `localLanguage`, `businessType`, `place`, `goal`,
 `extraNotes`, `turns`, `outcome`, `headline`, `agreed`, `unresolved`,
-`nextSteps`, `transcript`, `commitMessage`, `deploymentUrl`, `raw`.
+`nextSteps`, `transcript`, `commitMessage`, `deploymentUrl`, `raw`,
+`sessionId`.
 
 `raw` holds the complete JSON payload, so nothing is lost even if the flattened
 columns change later. Add new columns to the **end** of `HEADERS` only, or
-existing rows will stop lining up.
+existing rows will stop lining up — that is why `sessionId` sits after `raw`
+rather than next to `loggedAt` where it would read better.
+
+### Feedback columns
+
+`loggedAt`, `sessionId`, `gotIt`, `wouldCall`, `comment`, `commit`,
+`environment`.
+
+`gotIt` is `yes` / `partly` / `no`; `wouldCall` is `yes` / `reluctantly` /
+`no`. Either can be blank — the form sends whatever was filled in and does not
+require all three answers.
 
 The business phone number is deliberately not collected.
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CALL_BRIEF_KEY,
+  SESSION_ID_KEY,
   SUMMARY_KEY,
   TRANSCRIPT_KEY,
   defaultBrief,
@@ -56,6 +57,8 @@ export default function LiveCall() {
   const linesRef = useRef<TranscriptLine[]>([]);
   const hangingUp = useRef(false);
   const startedAt = useRef(Date.now());
+  // TEMPORARY - testing phase: ties this call's log row to its feedback row.
+  const sessionId = useRef(newId());
   const awaitingBusiness = useRef(false);
   const agentBuffer = useRef("");
 
@@ -306,6 +309,11 @@ export default function LiveCall() {
    */
   function recordTestSession(summary: unknown) {
     if (!testLoggingActive()) return;
+    try {
+      sessionStorage.setItem(SESSION_ID_KEY, sessionId.current);
+    } catch {
+      /* the feedback row just won't join to this session */
+    }
     void fetch("/api/test-log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -313,6 +321,7 @@ export default function LiveCall() {
         brief,
         lines: linesRef.current,
         summary,
+        sessionId: sessionId.current,
         startedAt: startedAt.current,
       }),
     }).catch(() => {

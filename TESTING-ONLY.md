@@ -19,6 +19,12 @@ record to `/api/test-log` containing:
   older build can be traced and set aside if its prompts or UI have since
   changed
 
+The summary page also shows testers three feedback questions. Their answers —
+two multiple choices and one free-text comment — are sent as a second record
+carrying the same `sessionId`, so an answer can be read next to the call it is
+about. The comment box is free text, so assume it can contain anything a
+tester felt like typing, and treat it as personal data too.
+
 **This is personal data.** Names (a booking is made under someone's name), what
 a person wants, where they are, and sometimes health information, because "my
 son has an earache" is exactly the kind of call this product exists for. Treat
@@ -38,8 +44,9 @@ The business phone number is deliberately **not** recorded.
 - **Do not put the records anywhere public.** A webhook into a private sheet is
   fine; a public endpoint is not.
 - **Deleting one tester's data is not solved, by decision.** If someone asks,
-  it is a manual search of the Sheet, and nothing ties rows to a person beyond
-  what they typed. That is fine for a handful of invited testers who were told
+  it is a manual search of the Sheet — now across two tabs, though `sessionId`
+  at least links a call to its feedback — and nothing ties rows to a person
+  beyond what they typed. That is fine for a handful of invited testers who were told
   what is kept. It stops being fine the moment this points at strangers, or the
   moment accounts exist and rows can be tied to a real identity. Revisit it
   then.
@@ -70,20 +77,27 @@ is required for a change to take effect.
 
 1. Delete `lib/testLog.ts`
 2. Delete `app/api/test-log/` (the whole folder)
-3. In `app/call/live/LiveCall.tsx`: delete `recordTestSession()`, its call
-   inside `hangUp()`, the `startedAt` ref, and the `testLog` import
-4. In `app/call/page.tsx`: delete the `.notice` block and the `testLog` import
-5. In `app/globals.css`: delete the `.notice` rule
-6. In `.env.example`: delete the TESTING-ONLY block
-7. In Vercel: delete `NEXT_PUBLIC_ENABLE_TEST_LOGGING` and
-   `TEST_LOG_WEBHOOK_URL`
-8. Delete the collected data once the research is written up, or move it
-   somewhere with a retention policy
-9. Delete `docs/testing/` (the Apps Script and its README)
-10. Delete or archive the Google Sheet itself, and undeploy the Apps Script web
-    app so the URL stops accepting posts
-11. Delete this file
-12. `grep -ri "test-log\|testLog\|TESTING-ONLY" .` should return nothing
+3. Delete `app/components/TestFeedback.tsx`
+4. In `app/call/live/LiveCall.tsx`: delete `recordTestSession()`, its call
+   inside `hangUp()`, the `startedAt` and `sessionId` refs, and the `testLog`
+   and `SESSION_ID_KEY` imports
+5. In `app/call/summary/page.tsx`: delete the `<TestFeedback />` element, its
+   import, the `sessionId` state and the `SESSION_ID_KEY` import
+6. In `lib/types.ts`: delete `SESSION_ID_KEY`
+7. In `app/call/page.tsx`: delete the `.notice` block and the `testLog` import
+8. In `app/globals.css`: delete the `.notice` rule and the whole "tester
+   feedback" block (`.feedback`, `.choice`, `.choice-row`, `.chip`)
+9. In `.env.example`: delete the TESTING-ONLY block
+10. In Vercel: delete `NEXT_PUBLIC_ENABLE_TEST_LOGGING` and
+    `TEST_LOG_WEBHOOK_URL`
+11. Delete the collected data once the research is written up, or move it
+    somewhere with a retention policy
+12. Delete `docs/testing/` (the Apps Script and its README)
+13. Delete or archive the Google Sheet itself — **both tabs** — and undeploy
+    the Apps Script web app so the URL stops accepting posts
+14. Delete this file
+15. `grep -ri "test-log\|testLog\|TESTING-ONLY\|TestFeedback\|SESSION_ID_KEY" .`
+    should return nothing
 
 Everything added for this is marked with a
 `TEMPORARY - USER TESTING PHASE ONLY` banner comment, and every record carries

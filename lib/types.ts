@@ -36,6 +36,8 @@ export const TRANSCRIPT_KEY = "yappr.transcript";
 export const SUMMARY_KEY = "yappr.summary";
 /** Light/dark preference. Read by the pre-paint script in app/layout.tsx too. */
 export const THEME_KEY = "yappr.theme";
+/** TEMPORARY - testing phase. Joins a logged session to its feedback row. */
+export const SESSION_ID_KEY = "yappr.sessionId";
 
 export const defaultBrief: CallBrief = {
   travelerLanguage: "English",

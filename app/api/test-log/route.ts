@@ -4,7 +4,9 @@
  *  See lib/testLog.ts for what this captures and TESTING-ONLY.md to remove it.
  * ============================================================================
  *
- * Receives one finished call session and records it as research data.
+ * Receives one finished call session, or one tester feedback answer, and
+ * records it as research data. The two share a `sessionId` so an answer can be
+ * read next to the call it is about.
  *
  * Two destinations, both optional and neither requiring a database:
  *  - Always: one line of structured JSON on stdout, which on Vercel means the
@@ -45,11 +47,42 @@ function buildInfo() {
 }
 
 type SessionPayload = {
+  kind?: "session";
+  sessionId?: string;
   brief?: CallBrief;
   lines?: TranscriptLine[];
   summary?: Summary;
   startedAt?: number;
 };
+
+/** One tester's answers on the summary page. See app/components/TestFeedback.tsx. */
+type FeedbackPayload = {
+  kind: "feedback";
+  sessionId?: string;
+  gotIt?: string;
+  wouldCall?: string;
+  comment?: string;
+};
+
+type Payload = SessionPayload | FeedbackPayload;
+
+/** Send one record to the collector. Never throws. */
+async function forward(record: object) {
+  // One line, so it can be grepped out of a log stream and parsed.
+  console.log(`${TEST_LOG_MARKER} ${JSON.stringify(record)}`);
+
+  const webhook = process.env.TEST_LOG_WEBHOOK_URL;
+  if (!webhook) return;
+
+  // Never let a failing webhook break the end of someone's call.
+  await fetch(webhook, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(record),
+  }).catch((error) => {
+    console.warn(`${TEST_LOG_MARKER} webhook failed:`, error);
+  });
+}
 
 export async function POST(req: Request) {
   if (!testLoggingConfigured()) {
@@ -66,20 +99,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = (await req.json()) as SessionPayload;
+    const body = (await req.json()) as Payload;
 
     const build = buildInfo();
-
-    const record = {
+    const common = {
       marker: TEST_LOG_MARKER,
       loggedAt: new Date().toISOString(),
-      // Traceability: which build this session came from.
+      sessionId: body.sessionId ?? null,
+      // Traceability: which build this came from.
       commit: build.commit,
       commitFull: build.commitFull,
       branch: build.branch,
       commitMessage: build.commitMessage,
       deploymentUrl: build.deploymentUrl,
       environment: build.environment,
+    };
+
+    if (body.kind === "feedback") {
+      await forward({
+        ...common,
+        kind: "feedback",
+        gotIt: body.gotIt || null,
+        wouldCall: body.wouldCall || null,
+        comment: body.comment || null,
+      });
+      return NextResponse.json({ logged: true });
+    }
+
+    const record = {
+      ...common,
+      kind: "session",
       startedAt: body.startedAt ? new Date(body.startedAt).toISOString() : null,
       durationSeconds: body.startedAt
         ? Math.round((Date.now() - body.startedAt) / 1000)
@@ -100,20 +149,7 @@ export async function POST(req: Request) {
       summary: body.summary ?? null,
     };
 
-    // One line, so it can be grepped out of a log stream and parsed.
-    console.log(`${TEST_LOG_MARKER} ${JSON.stringify(record)}`);
-
-    const webhook = process.env.TEST_LOG_WEBHOOK_URL;
-    if (webhook) {
-      // Never let a failing webhook break the end of someone's call.
-      await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(record),
-      }).catch((error) => {
-        console.warn(`${TEST_LOG_MARKER} webhook failed:`, error);
-      });
-    }
+    await forward(record);
 
     return NextResponse.json({ logged: true });
   } catch (error) {

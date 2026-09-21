@@ -892,6 +892,81 @@ ul.clean li {
   margin-bottom: 4px;
 }
 
+/* ---------- tester feedback (TEMPORARY - USER TESTING PHASE ONLY) ----------
+   Remove this whole block with the logging feature. See TESTING-ONLY.md.
+   Deliberately quieter than the summary it sits under: the summary is what the
+   tester came for, this is the favour being asked afterwards. */
+
+.feedback {
+  background: linear-gradient(168deg, var(--surface), var(--surface-tint));
+  box-shadow: var(--lift-sm), inset 0 0 0 1px var(--gold-edge);
+}
+
+.feedback h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+
+.feedback .field {
+  margin-top: 20px;
+}
+
+.feedback .actions {
+  margin-top: 20px;
+}
+
+.choice {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+}
+
+.choice legend {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+/* Sized like a .btn, not like a tag: these get tapped with a thumb. */
+.chip {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 18px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--ghost-bg);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+  transition: background 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+
+.chip:hover {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--field-border-hover);
+}
+
+/* Chosen state carries a check as well as colour, so it does not rely on
+   colour alone — and survives a screenshot taken in greyscale. */
+.chip.chosen {
+  background: var(--terracotta-deep);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+
+.chip.chosen::before {
+  content: "✓ ";
+}
+
 .footer {
   padding: 28px 0 44px;
   color: var(--text-muted);
