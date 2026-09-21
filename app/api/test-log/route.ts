@@ -34,7 +34,11 @@ function buildInfo() {
     commit: sha ? sha.slice(0, 7) : "local",
     commitFull: sha,
     branch: process.env.VERCEL_GIT_COMMIT_REF ?? null,
-    commitMessage: process.env.VERCEL_GIT_COMMIT_MESSAGE ?? null,
+    // Subject line only. The full body (paragraphs, trailers) is repeated on
+    // every row and makes the sheet unreadable; the subject is the part that
+    // actually identifies a build at a glance.
+    commitMessage:
+      process.env.VERCEL_GIT_COMMIT_MESSAGE?.split("\n")[0].slice(0, 120) ?? null,
     deploymentUrl: process.env.VERCEL_URL ?? null,
     environment: process.env.VERCEL_ENV ?? "development",
   };
