@@ -47,6 +47,18 @@ These are the substantive finds, and **none of them are visible in static code r
 
 **Verified on the deployed site** at `022b03e`: homepage and brief form at 390px and desktop, plus a full live call (Dutch → Thai) to see the new transcript bubbles in place. That walkthrough caught one thing worth knowing — moving the primary action to terracotta had made **"Hang up" the loudest button on the call screen**, sitting next to "Send note" at the same size. It now has its own outlined red treatment (`.btn-danger`). Lesson for next time: after any change to the button palette, look at every screen that has a destructive action on it, not just the marketing page.
 
+### 5. Ran the three design skills properly (commits `e9ca326`, `8cdb4d0`)
+
+**taste-skill pre-flight** found five real failures, all fixed: em-dashes in visible copy (it treats this as a binary ban and it is the most-violated AI tell), a 29-word hero subtext against a 20-word cap, two eyebrow labels on a two-section page (cap is one per three), a decorative status dot that duplicated the text beside it, and five ad-hoc corner radii now collapsed into one documented scale.
+
+**ui-ux-pro-max** was run against its own palette and font-pairing data, and the useful result was negative: for "travel / booking / trust" it proposes sky-blue `#0EA5E9` with an orange CTA, and its generated design system for this product is trust-blue `#2563EB` + orange + Swiss minimalism. That is the templated look the other skill exists to prevent. Its font data returned children's-app pairings (Fredoka/Nunito, Caveat/Quicksand) for "warm and friendly", and independently recommends **Outfit**, which Yappr already uses. **Conclusion: keep Fraunces + Outfit and the cream/terracotta/teal palette.** Both are technically on taste-skill's banned-default lists (Fraunces by name, the cream in the "premium-consumer beige" family), but they are pre-existing brand, not a default reach, and nothing in the data is better. Do not let a future session "fix" them without asking Jeroen.
+
+**design-motion-principles audit** — its most useful step is the gap analysis (conditional UI with NO transition is usually worse than badly-tuned motion). One real gap: new transcript lines appeared instantly mid-call, on the screen whose whole purpose is watching lines arrive. Now a 200ms enter. Also replaced the browser default `ease` with one `--ease-out` token. Nothing else gained motion.
+
+**Still open from the skills, deliberately not done:**
+- **No dark mode.** All three flag it; ui-ux-pro-max's style profile says "Light supported | Dark supported". This is the single biggest remaining design gap, and it is a real one for this product: travellers use phones at night. It needs a token pass over `globals.css` plus testing both modes.
+- **No images anywhere.** taste-skill: "a pure-text page is not minimalism, it is incomplete work." No image-generation tool was available in the session, and stock placeholders on a live product would be worse than nothing. Needs real photography or generated assets.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
