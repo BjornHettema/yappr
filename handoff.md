@@ -4,42 +4,45 @@ Written 2026-09-21 by a Claude (Opus 5) Cowork session, for whichever session pi
 
 ## Goal
 
-Yappr lets a traveler brief a phone call in their own language; a live voice model (OpenAI Realtime API) makes the call in the local language, shows a dual-language transcript live, and writes a summary on hangup. Target user: non-technical tourists, not a business/secretary tool. Repo: https://github.com/BjornHettema/yappr (public, source of truth — always clone fresh, no local dev copy exists). Live: https://yappr-rosy.vercel.app (gated behind `SITE_PASSCODE`, currently `admin` — flagged as too guessable, **still not rotated**).
+Yappr lets a traveler brief a phone call in their own language; a live voice model (OpenAI Realtime API) makes the call in the local language, shows a dual-language transcript live, and writes a summary on hangup. Target user: non-technical tourists, not a business/secretary tool. Repo: https://github.com/BjornHettema/yappr (public, source of truth — always clone fresh, no local dev copy exists). Live: https://yappr-rosy.vercel.app.
 
 ## Current state
 
-Working, deployed, feature-complete for its current scope: brief → live call → dual transcript → summary. No automated tests exist; verification is manual plus CI's lint/typecheck/build on every push. The previous session's dead-code/duplication audit is now **fully actioned** — all five of its findings are done, so that audit is closed. Roadmap tracked in a Claude Artifact dashboard ("Yappr Status" — ask the user for the link if you need it, it's not in this repo).
+Working, deployed, CI green at `576946c`. The passcode has been rotated off `admin` (Jeroen holds the current one — ask him, it is not in the repo and must never be committed). The previous session's dead-code/duplication audit is fully actioned and closed.
+
+**The app has now been walked through end to end on the deployed instance three times this session, with real GPT Realtime calls** (Dutch traveler → Thai restaurant). The last run was clean: correct opening turn, correct details, accurate summary. Still no automated tests; verification is manual plus CI's lint/typecheck/build.
 
 ## What this session did
 
-Implemented every refactor the previous session's audit recommended (it was audit-only, no code changes). Changes, all pushed to `main`:
+### 1. Actioned the duplication audit (commit `36f4b91`)
 
-1. **Shared OpenAI call wrapper.** `lib/openai.ts` gained `callOpenAI(url, body, { fallbackError, extraHeaders })`, a `chatCompletion(body, fallbackError)` shorthand, `chatText(data)` for pulling the assistant message out, an `OpenAIRequestError` that carries the upstream status, and `errorResponse(error, fallback)` for the catch block. All four API routes (`summary`, `translate`, `simulate-business`, `realtime/session`) now use them — the repeated fetch/`if (!response.ok)`/catch-500 skeleton is gone. External behavior is unchanged: same error message strings, same status codes (verified by hand, see below).
-2. **`sendUserMessage(text)` in `LiveCall.tsx`** replaces the duplicated `conversation.item.create` + `response.create` pair in `afterAgentSpoke()` and `sendCoach()`.
-3. **`app/components/TranscriptLineView.tsx`** is now the single renderer for a transcript line, used by both `LiveCall.tsx` and `app/call/summary/page.tsx`. This also **fixed the real drift the audit found**: the summary page used to print the raw speaker key (`yappr`/`business`/`you`); it now shows the same friendly labels as the live view (`Yappr` / the business name / `You`). `speakerLabel()` falls back to "The business" when no business name is set.
-4. **`speak(speaker, original)` helper in `LiveCall.tsx`** folds the two identical translate-then-`pushLine` blocks together (audit item 4, marked optional).
-5. **`Summary` type moved to `lib/types.ts`** next to `CallBrief`/`TranscriptLine` (audit item 5, marked optional), and the unused `RealtimeEvent.call_id` field was dropped (audit's one real dead-code finding). `Speaker` stays exported — it's now genuinely used by `TranscriptLineView`, so knip shouldn't flag it again.
+`lib/openai.ts` gained `callOpenAI` / `chatCompletion` / `chatText`, an `OpenAIRequestError` carrying the upstream status, and `errorResponse()`; all four API routes use them. New `app/components/TranscriptLineView.tsx` is the single transcript-line renderer for the live call and the summary page — which fixed the summary page printing raw speaker keys. `sendUserMessage()` and `speak()` helpers in `LiveCall.tsx`. `Summary` type moved to `lib/types.ts`; unused `RealtimeEvent.call_id` dropped. Both conventions are written into `CLAUDE.md`.
 
-`CLAUDE.md` gained two conventions so these don't regress: routes go through `callOpenAI`/`errorResponse`, transcript markup goes through `TranscriptLineView`.
+### 2. Kept the traveler's request visible (commits `11290af`, `fbb9337`)
 
-### How it was verified (no test suite, so: by hand)
+Tester feedback (a friend of Jeroen's, manual test): you couldn't check the call against what you'd actually asked for. New `app/components/CallRequest.tsx` shows the goal, the extra notes and the place details — in the live call panel and at the top of the summary. The extra notes were previously never shown again anywhere. Renders nothing when the brief is empty, since `sessionStorage` is cold in a fresh tab.
 
-- `npm run lint`, `npm run typecheck`, `npm run build` all clean — same three checks CI runs. CI itself then went **green on `36f4b91`** (checked via the public Actions page with WebFetch — that works even though the GitHub *API* is blocked in this sandbox; useful trick for the next session).
-- Dev server smoke test: `/`, `/call`, `/call/live`, `/call/summary` all 200.
-- API error-shape regression check with no `OPENAI_API_KEY` set: `/api/translate` → 500 `{"error":"Missing OPENAI_API_KEY"}`, `/api/summary` → same, `/api/realtime/session` with an empty body → 400 `{"error":"Missing call details."}`. Identical to pre-refactor behavior.
-- Rendered `TranscriptLineView` through a throwaway page under `app/` (deleted again before committing) and asserted the markup: correct `line <speaker>` class, correct friendly label for all three speakers, business-name fallback, `· speaking` suffix on the partial line, and no `translation` div when the translation is empty.
-- **Not verified: a real end-to-end voice call**, because no `OPENAI_API_KEY` was available in this session and the built-in browser can't reach a localhost dev server. The refactors are behavior-preserving and the realtime message payloads are byte-identical to before, but if you want belt-and-braces, walk through one live call on the deployed instance before building anything on top of this.
+### 3. Fixed three prompt bugs found by live testing (commits `a71770c`, `576946c`)
 
-## What failed / known blockers (standing, not new this session)
+These are the substantive finds, and **none of them are visible in static code review** — they only appear when you actually place a call:
 
-- **Vercel CLI/API is fully blocked from this cloud sandbox** (org policy). Any Vercel action (checking deploys, env vars, redeploys) has to go through Jeroen via the Vercel dashboard.
-- **`gh` CLI OAuth device-flow login is blocked** by the sandbox proxy. Pushing needs a fresh user-supplied fine-grained PAT used transiently via `http.extraHeader`, per `CLAUDE.md`. Ask for a token each session; don't assume a prior one is still valid. (Plain `git push` without a token was not granted this session either.)
-- **GitHub API calls are refused** in this sandbox ("GitHub access to this repository is not enabled for this session. Use add_repo…") — and there is still no `add_repo` tool to invoke, even with a valid PAT in the header, so don't hunt for it. Workaround that does work: `WebFetch` on https://github.com/BjornHettema/yappr/actions reads CI status fine, since the repo is public.
+- **The agent narrated its own process on the first turn.** Its opening was, translated: "Hello, welcome. We're about to start the request for the travelers. I'll send the information to the team, so please wait a moment." Whoever picks up has no idea what that means, and it burned a whole turn before asking anything. The opening turn now lives in `callOpeningInstructions()` in `lib/prompts.ts`.
+- **The booking name got re-spelled.** "Jeroen" came back from Thai as "de heer Jeron" in one line and "meneer Jeroen" in the next. `/api/translate` now takes an optional `names` hint; `LiveCall` passes the proper nouns the traveler typed so the translator restores their spelling instead of guessing one back out of the local script.
+- **The agent invented details it was never given — the serious one.** Briefed with "table for four at 19:00, name Jeroen, outside, one shellfish allergy", its opening turn asked for 18:00, a window seat, and a crab curry. It corrected itself over later turns, but the summary still reported the crab dish as agreed — i.e. the app told a traveler with a shellfish allergy that shellfish had been ordered for them. `callOpeningInstructions()` now restates the goal and notes verbatim and forbids adding any detail not in them; `agentInstructions()` carries a hard no-invention rule plus a requirement that allergies and medical/accessibility needs be stated and never contradicted; `summaryPrompt()` may only report what the local actually confirmed.
+
+**Watch this one.** It is the failure mode with real consequences for this product, and a prompt rule is a soft guarantee. The last live run was clean, but one clean run is not proof — re-test invention specifically whenever the agent prompt or the model changes, and consider whether a real check (e.g. diffing the summary's `agreed` items against the brief) belongs in the app.
+
+## What failed / known blockers (standing)
+
+- **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
+- **`gh` CLI OAuth device-flow login is blocked**, and the **GitHub API is refused** even with a valid PAT in the header ("GitHub access to this repository is not enabled for this session. Use add_repo…"); there is no `add_repo` tool to invoke, so don't hunt for it. Pushing works with a fresh user-supplied fine-grained PAT used transiently via `http.extraHeader` (see `CLAUDE.md`). To read CI status, `WebFetch` https://github.com/BjornHettema/yappr/actions — the repo is public, so that works.
+- **`WebFetch` can't see these pages' content** — they're client-rendered, so it only returns `<head>` metadata and will make you think the passcode gate is off when it isn't. Use a browser tool.
+- **The browser pane's `read_page` returns "(empty page)" / viewport 0x0 while the pane is hidden.** `get_page_text` still works, and filling the brief form via `javascript_tool` (native value setter + dispatched `input`/`change` events, since the inputs are React-controlled) works without needing refs. That's the reliable way to drive a test call when you can't see the pane.
 
 ## What it should do next
 
-1. **Rotate `SITE_PASSCODE` away from `admin`.** This is now the oldest open item and it's a two-minute change in the Vercel dashboard (Jeroen has to do it; Claude can't reach Vercel). Do this before the link goes to any tester.
-2. **Get 3–5 real non-technical-traveler testers on the deployed app** and collect feedback. This is the one open item nothing else can substitute for, and everything below it is speculative until it's done. Offer to draft the invite message and a lightweight feedback form.
+1. **Get 3–5 real non-technical-traveler testers on the deployed app.** This is the one open item nothing else substitutes for. One friend's manual test already produced a real feature (item 2 above) and, indirectly, the three prompt bugs. Claude can draft the invite and a lightweight feedback form.
+2. **Decide on the summary page's language.** Content comes back in the traveler's language but the headings are hardcoded English ("What was agreed", "Still open", "Next steps"). For a Dutch or Japanese traveler that reads half-finished, and the target user is explicitly non-technical. Not yet discussed with Jeroen.
 3. Longer-term, unstarted: real outbound calling via Twilio Voice + a media-stream bridge (needs its own always-on service, doesn't fit serverless Next.js — see `README.md`), then a shorter custom domain.
 
-Nothing in the codebase is blocking any of the above — the code is in good shape and the maintenance backlog the last audit raised is empty. The next real risk is building more features before step 2 tells you which ones matter.
+Note for whoever runs the next live test: each one spends real OpenAI credit on Jeroen's key. One call per change is enough.
