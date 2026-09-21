@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LivePostcard from "@/app/components/LivePostcard";
 
 export default function HomePage() {
   return (
@@ -20,16 +21,7 @@ export default function HomePage() {
             </a>
           </div>
         </div>
-        <aside className="card postcard">
-          <div className="meta">Live with Baan Suan · Bangkok · Thai</div>
-          <div className="wave" aria-hidden="true">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <span key={i} />
-            ))}
-          </div>
-          <p className="original">มีโต๊ะสำหรับสองท่าน เวลา 19:00 ค่ะ ติดหน้าต่างได้ไหมคะ</p>
-          <p className="translation">Table for two at 7:00pm — is a window seat possible?</p>
-        </aside>
+        <LivePostcard />
       </section>
 
       <section id="how" className="how">

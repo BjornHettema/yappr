@@ -167,6 +167,18 @@ h3,
   padding: 28px;
   position: relative;
   overflow: hidden;
+  /* Examples vary in length; hold the height so the hero doesn't jump when
+     a new one is picked on load. */
+  min-height: 320px;
+}
+
+.fade-in {
+  animation: fade-in 420ms ease-out both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
 
 .postcard::after {
@@ -472,5 +484,12 @@ ul.clean {
 @media (max-width: 560px) {
   .steps {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave span,
+  .fade-in {
+    animation: none;
   }
 }
