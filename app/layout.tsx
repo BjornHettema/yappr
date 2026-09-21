@@ -1,6 +1,37 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
+
+/**
+ * Fonts are self-hosted through next/font rather than linked from
+ * fonts.googleapis.com, for two reasons:
+ *
+ * 1. Privacy. A <link> to Google's CDN sends every visitor's IP address to
+ *    Google before the page renders. A German court (LG München I, 2022)
+ *    ruled that doing this without consent breaches the GDPR, and it has
+ *    been a steady source of warning letters in the EU since. next/font
+ *    downloads the files at BUILD time and serves them from our own origin,
+ *    so no visitor request ever reaches Google.
+ * 2. Speed. It removes a render-blocking request to a third-party origin,
+ *    which is the slowest part of a first visit on a weak connection, and
+ *    next/font matches fallback metrics so there is no layout shift.
+ *
+ * Note for anyone editing this from a restricted sandbox: this needs network
+ * access to fonts.googleapis.com at build time. If `npm run build` fails
+ * fetching the fonts, that is the environment, not the code — CI can build it.
+ */
+const display = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
+});
+
+const sans = Outfit({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Yappr: call like a local",
@@ -10,16 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font -- this is the root layout, so it loads for every route, not "a single page" */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>
         <div className="shell">
           <header className="nav">
