@@ -368,7 +368,7 @@ export default function LiveCall() {
             <button className="btn btn-ghost" type="button" onClick={sendCoach}>
               Send note
             </button>
-            <button className="btn btn-primary" type="button" onClick={() => void hangUp()}>
+            <button className="btn btn-danger" type="button" onClick={() => void hangUp()}>
               Hang up
             </button>
           </div>
