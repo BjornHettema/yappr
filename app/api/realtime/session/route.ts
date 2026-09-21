@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { agentInstructions } from "@/lib/prompts";
-import { endCallTool, openaiHeaders, realtimeModel } from "@/lib/openai";
+import { callOpenAI, endCallTool, errorResponse, realtimeModel } from "@/lib/openai";
 import type { CallBrief } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -10,13 +10,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing call details." }, { status: 400 });
     }
 
-    const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
-      method: "POST",
-      headers: {
-        ...openaiHeaders(),
-        "OpenAI-Safety-Identifier": "yappr-web",
-      },
-      body: JSON.stringify({
+    const data = await callOpenAI(
+      "https://api.openai.com/v1/realtime/client_secrets",
+      {
         expires_after: { anchor: "created_at", seconds: 600 },
         session: {
           type: "realtime",
@@ -33,16 +29,12 @@ export async function POST(req: Request) {
             output: { voice: "marin" },
           },
         },
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || "Could not start a live session." },
-        { status: response.status },
-      );
-    }
+      },
+      {
+        fallbackError: "Could not start a live session.",
+        extraHeaders: { "OpenAI-Safety-Identifier": "yappr-web" },
+      },
+    );
 
     const value = data?.value ?? data?.client_secret?.value;
     if (!value) {
@@ -51,7 +43,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ value, model: realtimeModel() });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Session failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(error, "Session failed.");
   }
 }

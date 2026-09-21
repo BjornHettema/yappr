@@ -12,6 +12,7 @@ import {
   type CallBrief,
   type TranscriptLine,
 } from "@/lib/types";
+import TranscriptLineView from "@/app/components/TranscriptLineView";
 
 type RealtimeEvent = {
   type: string;
@@ -19,7 +20,6 @@ type RealtimeEvent = {
   transcript?: string;
   name?: string;
   arguments?: string;
-  call_id?: string;
 };
 
 function silentTrack() {
@@ -161,6 +161,19 @@ export default function LiveCall() {
     }
   }
 
+  /** Inject a message into the realtime conversation and ask for a reply. */
+  function sendUserMessage(text: string) {
+    send({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text }],
+      },
+    });
+    send({ type: "response.create" });
+  }
+
   function pushLine(line: Omit<TranscriptLine, "id" | "at">) {
     const next: TranscriptLine = { ...line, id: newId(), at: Date.now() };
     linesRef.current = [...linesRef.current, next];
@@ -178,22 +191,27 @@ export default function LiveCall() {
     return (data.translation as string) || text;
   }
 
-  async function afterAgentSpoke(original: string) {
-    if (hangingUp.current || awaitingBusiness.current || !original.trim()) return;
-    awaitingBusiness.current = true;
-    setPartial("");
-
+  /** Translate a spoken line from the local language and add it to the transcript. */
+  async function speak(speaker: "yappr" | "business", original: string) {
     const translation = await translate(
       original,
       brief.localLanguage,
       brief.travelerLanguage,
     );
-    pushLine({
-      speaker: "yappr",
+    return pushLine({
+      speaker,
       original,
       translation,
       language: brief.localLanguage,
     });
+  }
+
+  async function afterAgentSpoke(original: string) {
+    if (hangingUp.current || awaitingBusiness.current || !original.trim()) return;
+    awaitingBusiness.current = true;
+    setPartial("");
+
+    await speak("yappr", original);
 
     try {
       const res = await fetch("/api/simulate-business", {
@@ -212,27 +230,8 @@ export default function LiveCall() {
       if (!res.ok || hangingUp.current) return;
 
       const businessOriginal = data.reply as string;
-      const businessTranslation = await translate(
-        businessOriginal,
-        brief.localLanguage,
-        brief.travelerLanguage,
-      );
-      pushLine({
-        speaker: "business",
-        original: businessOriginal,
-        translation: businessTranslation,
-        language: brief.localLanguage,
-      });
-
-      send({
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: "user",
-          content: [{ type: "input_text", text: `[BUSINESS] ${businessOriginal}` }],
-        },
-      });
-      send({ type: "response.create" });
+      await speak("business", businessOriginal);
+      sendUserMessage(`[BUSINESS] ${businessOriginal}`);
     } finally {
       awaitingBusiness.current = false;
     }
@@ -282,15 +281,7 @@ export default function LiveCall() {
       translation: "Private note to Yappr",
       language: brief.travelerLanguage,
     });
-    send({
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [{ type: "input_text", text: `[TRAVELER COACHING] ${note}` }],
-      },
-    });
-    send({ type: "response.create" });
+    sendUserMessage(`[TRAVELER COACHING] ${note}`);
     setCoach("");
   }
 
@@ -378,23 +369,17 @@ export default function LiveCall() {
           <h2>Live transcript</h2>
           <div className="transcript">
             {lines.map((line) => (
-              <article key={line.id} className={`line ${line.speaker}`}>
-                <div className="who">
-                  {line.speaker === "yappr"
-                    ? "Yappr"
-                    : line.speaker === "business"
-                      ? brief.businessName
-                      : "You"}
-                </div>
-                <div className="original">{line.original}</div>
-                {line.translation ? <div className="translation">{line.translation}</div> : null}
-              </article>
+              <TranscriptLineView
+                key={line.id}
+                line={line}
+                businessName={brief.businessName}
+              />
             ))}
             {partial ? (
-              <article className="line yappr">
-                <div className="who">Yappr · speaking</div>
-                <div className="original">{partial}</div>
-              </article>
+              <TranscriptLineView
+                line={{ speaker: "yappr", original: partial, translation: "" }}
+                labelSuffix="speaking"
+              />
             ) : null}
             {!lines.length && !partial ? (
               <p className="meta">The line is connecting. Transcript appears as soon as someone speaks.</p>

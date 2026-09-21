@@ -9,18 +9,10 @@ import {
   defaultBrief,
   loadJson,
   type CallBrief,
+  type Summary,
   type TranscriptLine,
 } from "@/lib/types";
-
-type Summary = {
-  headline?: string;
-  outcome?: string;
-  agreed?: string[];
-  unresolved?: string[];
-  nextSteps?: string[];
-  quote?: string;
-  error?: string;
-};
+import TranscriptLineView from "@/app/components/TranscriptLineView";
 
 export default function SummaryPage() {
   const [brief] = useState<CallBrief>(() => loadJson(CALL_BRIEF_KEY, defaultBrief));
@@ -78,11 +70,11 @@ export default function SummaryPage() {
           <h2>Full transcript</h2>
           <div className="transcript">
             {lines.map((line) => (
-              <article key={line.id} className={`line ${line.speaker}`}>
-                <div className="who">{line.speaker}</div>
-                <div className="original">{line.original}</div>
-                {line.translation ? <div className="translation">{line.translation}</div> : null}
-              </article>
+              <TranscriptLineView
+                key={line.id}
+                line={line}
+                businessName={brief.businessName}
+              />
             ))}
           </div>
           <div className="actions">

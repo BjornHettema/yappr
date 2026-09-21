@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { openaiHeaders } from "@/lib/openai";
+import { chatCompletion, chatText, errorResponse } from "@/lib/openai";
 import { summaryPrompt } from "@/lib/prompts";
 import type { CallBrief, TranscriptLine } from "@/lib/types";
 
@@ -17,10 +17,8 @@ export async function POST(req: Request) {
       )
       .join("\n");
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: openaiHeaders(),
-      body: JSON.stringify({
+    const data = await chatCompletion(
+      {
         model: "gpt-4o",
         temperature: 0.3,
         response_format: { type: "json_object" },
@@ -31,21 +29,13 @@ export async function POST(req: Request) {
           },
           { role: "user", content: summaryPrompt(brief, transcript) },
         ],
-      }),
-    });
+      },
+      "Summary failed.",
+    );
 
-    const data = await response.json();
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || "Summary failed." },
-        { status: response.status },
-      );
-    }
-
-    const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+    const parsed = JSON.parse(chatText(data) || "{}");
     return NextResponse.json(parsed);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Summary failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(error, "Summary failed.");
   }
 }

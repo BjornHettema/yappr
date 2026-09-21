@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { openaiHeaders } from "@/lib/openai";
+import { chatCompletion, chatText, errorResponse } from "@/lib/openai";
 
 export async function POST(req: Request) {
   try {
@@ -17,10 +17,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ translation: text });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: openaiHeaders(),
-      body: JSON.stringify({
+    const data = await chatCompletion(
+      {
         model: "gpt-4o-mini",
         temperature: 0.2,
         messages: [
@@ -30,22 +28,12 @@ export async function POST(req: Request) {
           },
           { role: "user", content: text },
         ],
-      }),
-    });
+      },
+      "Translate failed.",
+    );
 
-    const data = await response.json();
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || "Translate failed." },
-        { status: response.status },
-      );
-    }
-
-    return NextResponse.json({
-      translation: data.choices?.[0]?.message?.content?.trim() || text,
-    });
+    return NextResponse.json({ translation: chatText(data) || text });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Translate failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(error, "Translate failed.");
   }
 }

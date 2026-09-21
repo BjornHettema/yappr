@@ -30,9 +30,11 @@ app/
   api/summary/route.ts             Turns the transcript into a structured summary
   api/translate/route.ts           One-off text translation for the live transcript
   api/access/route.ts              Checks the passcode, sets the access cookie
+  components/TranscriptLineView.tsx  One transcript line, shared by live call + summary
 lib/
   languages.ts    Dropdown options (traveler/local languages, business types)
-  openai.ts       OpenAI header/model helpers + the `end_call` tool definition
+  openai.ts       OpenAI headers/models, the shared `callOpenAI` fetch wrapper,
+                  route `errorResponse` helper + the `end_call` tool definition
   prompts.ts      All LLM prompt strings (agent, business simulator, summary)
   types.ts        Shared types + sessionStorage read/write helpers
 middleware.ts     Early-access passcode gate (see below)
@@ -83,6 +85,13 @@ request time inside route handlers, never at module load or build time.
   stop random visitors from running up the OpenAI bill on the public URL.
   It should stay in place until there's a real reason to open the site up
   (and real rate limiting/auth to go with it), not be removed casually.
+- **API routes should go through `callOpenAI`/`chatCompletion` in `lib/openai.ts`**
+  rather than calling `fetch` against OpenAI directly, and should end with
+  `catch (error) { return errorResponse(error, "<fallback>"); }`. That keeps the
+  upstream status code on failures and stops the four routes from drifting apart.
+- **Transcript lines render through `app/components/TranscriptLineView.tsx`** in
+  both the live call and the summary page — don't hand-roll the `<article
+  className="line …">` markup again; the two copies had already drifted once.
 - **There are no automated tests yet.** Verify changes by running `npm run
   dev` and walking through: brief a call -> live call page connects and a
   transcript appears -> hang up -> summary page shows content. `npm run

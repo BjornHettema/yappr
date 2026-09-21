@@ -9,6 +9,17 @@ export type TranscriptLine = {
   at: number;
 };
 
+/** Shape of `/api/summary`'s response, as rendered by the summary page. */
+export type Summary = {
+  headline?: string;
+  outcome?: string;
+  agreed?: string[];
+  unresolved?: string[];
+  nextSteps?: string[];
+  quote?: string;
+  error?: string;
+};
+
 export type CallBrief = {
   travelerLanguage: string;
   localLanguage: string;
