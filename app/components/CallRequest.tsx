@@ -1,4 +1,9 @@
+import { businessTypes } from "@/lib/languages";
 import type { CallBrief } from "@/lib/types";
+
+export function businessTypeLabel(value: string) {
+  return businessTypes.find((type) => type.value === value)?.label || value;
+}
 
 /**
  * What the traveler asked for, shown unchanged during the call and after it.
@@ -16,8 +21,12 @@ export default function CallRequest({
   // opened fresh in a new tab. Show nothing rather than an empty box.
   if (!brief?.goal?.trim()) return null;
 
-  const details = [brief.businessType, brief.phoneNumber, brief.place]
-    .map((value) => value?.trim())
+  // The business name and place are already in the heading above this block
+  // on both pages, so only the things that aren't shown elsewhere go here.
+  const details = [
+    brief.businessType ? businessTypeLabel(brief.businessType) : "",
+    brief.phoneNumber?.trim(),
+  ]
     .filter(Boolean)
     .join(" · ");
 
