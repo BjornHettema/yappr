@@ -5,6 +5,9 @@
   --muted: #6d6258;
   --line: rgba(28, 22, 18, 0.12);
   --hairline: rgba(28, 22, 18, 0.07);
+  /* Input borders identify a UI component, so WCAG 1.4.11 wants >= 3:1
+     against the field. 0.5 alpha measures 3.4:1 on white. */
+  --field-border: rgba(28, 22, 18, 0.5);
   --terracotta: #c24e1d;
   --terracotta-deep: #9b3912;
   --teal: #1f6a64;
@@ -466,7 +469,8 @@ label {
   grid-column: 1 / -1;
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin-top: 8px;
 }
 
@@ -475,11 +479,14 @@ label {
 }
 
 .fieldset-head h2 {
+  flex: 0 0 auto;
   font-size: 19px;
   margin: 0;
 }
 
+/* The hint drops to its own line before the heading is allowed to wrap. */
 .fieldset-head .meta {
+  flex: 1 1 220px;
   font-size: 13.5px;
 }
 
@@ -495,7 +502,7 @@ input,
 select,
 textarea {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-sm);
   padding: 14px 15px;
   color: var(--ink);
@@ -505,13 +512,14 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(109, 98, 88, 0.6);
+  /* 4.7:1 on white — placeholders are still text. */
+  color: rgba(109, 98, 88, 0.9);
 }
 
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: rgba(28, 22, 18, 0.24);
+  border-color: rgba(28, 22, 18, 0.7);
 }
 
 input:focus,
