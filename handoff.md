@@ -63,6 +63,8 @@ The brand hues do not move between modes; surfaces, text and tint amounts do. Th
 
 Every pair was measured and passes AA. Lowest are white on the terracotta fill (4.8:1) and the field border against its field (4.0:1); body text is 14.6:1, muted 7.1:1. Verified on the deployed site in both modes, including the transcript bubbles.
 
+**A switch followed in `0c6de32`**, after Jeroen pointed out there was no way to override the OS. Behaviour he chose: follow the system until someone picks a side, then remember their choice and stop following. Dark is keyed on `data-theme` on `<html>`, not on a media query, resolved by a small **blocking inline script** in `layout.tsx` before first paint (a deferred script or a `useEffect` both run after the browser has painted, which is the flash this avoids). `ThemeToggle` only reads and changes it, and listens to the OS only while nothing is stored. Verified live: the stored choice survives a reload and beats an OS set to dark.
+
 **Still open, deliberately not done:**
 - **No images anywhere.** taste-skill: "a pure-text page is not minimalism, it is incomplete work." No image-generation tool was available in the session, and stock placeholders on a live product would be worse than nothing. Now tracked on the status dashboard under Now: needs a hero image plus two or three supporting shots, generated or licensed.
 
