@@ -55,9 +55,16 @@ These are the substantive finds, and **none of them are visible in static code r
 
 **design-motion-principles audit** — its most useful step is the gap analysis (conditional UI with NO transition is usually worse than badly-tuned motion). One real gap: new transcript lines appeared instantly mid-call, on the screen whose whole purpose is watching lines arrive. Now a 200ms enter. Also replaced the browser default `ease` with one `--ease-out` token. Nothing else gained motion.
 
-**Still open from the skills, deliberately not done:**
-- **No dark mode.** All three flag it; ui-ux-pro-max's style profile says "Light supported | Dark supported". This is the single biggest remaining design gap, and it is a real one for this product: travellers use phones at night. It needs a token pass over `globals.css` plus testing both modes.
-- **No images anywhere.** taste-skill: "a pure-text page is not minimalism, it is incomplete work." No image-generation tool was available in the session, and stock placeholders on a live product would be worse than nothing. Needs real photography or generated assets.
+### 6. Dark mode (commit `bd01cfa`)
+
+Every colour in `globals.css` is now a semantic token, so dark mode is one `@media (prefers-color-scheme: dark)` override block rather than a parallel stylesheet. **Do not add raw hex to a rule** — add a token and give it both values, or dark mode silently breaks.
+
+The brand hues do not move between modes; surfaces, text and tint amounts do. The part that needed thought: terracotta and teal are too dark to read *as text* on a dark surface, so `--accent-text` and `--teal-text` lift to `#e8845a` / `#5fc0b4`, while the button *fill* stays brand terracotta with white on it. Shadows do almost nothing on dark, so depth there comes from the hairline insets plus a deeper ambient shadow. `color-scheme: light dark` is set so form controls and scrollbars follow.
+
+Every pair was measured and passes AA. Lowest are white on the terracotta fill (4.8:1) and the field border against its field (4.0:1); body text is 14.6:1, muted 7.1:1. Verified on the deployed site in both modes, including the transcript bubbles.
+
+**Still open, deliberately not done:**
+- **No images anywhere.** taste-skill: "a pure-text page is not minimalism, it is incomplete work." No image-generation tool was available in the session, and stock placeholders on a live product would be worse than nothing. Now tracked on the status dashboard under Now: needs a hero image plus two or three supporting shots, generated or licensed.
 
 ## What failed / known blockers (standing)
 
