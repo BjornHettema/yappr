@@ -49,10 +49,31 @@ Open the URL in a browser to check it is alive. It should say
 
 In the Vercel project → **Settings → Environment Variables**, add:
 
-| Name | Value |
-| --- | --- |
-| `NEXT_PUBLIC_ENABLE_TEST_LOGGING` | `true` |
-| `TEST_LOG_WEBHOOK_URL` | the Web app URL from step 3 |
+| Name | Value | Type |
+| --- | --- | --- |
+| `NEXT_PUBLIC_ENABLE_TEST_LOGGING` | `true` | **Config** |
+| `TEST_LOG_WEBHOOK_URL` | the Web app URL from step 3 | **Secret** |
+
+Why each type:
+
+- The flag is **Config** because it is baked into the client bundle by design
+  and is visible to anyone who views source. Marking it Secret would hide it
+  from you in the dashboard while hiding nothing from the public, and you want
+  to be able to see at a glance whether recording is on.
+- The webhook is **Secret** because anyone holding that URL can write rows into
+  a sheet of personal data. It has no `NEXT_PUBLIC_` prefix, so it stays
+  server-side and never reaches the browser.
+
+**Save the webhook URL in your password manager before you save it in Vercel.**
+A Secret cannot be read back afterwards: it keeps working and can be replaced,
+but nobody can retrieve the value. You will want it again.
+
+Two Vercel details worth knowing: Secret is only available for the Production
+and Preview environments, not Development; and Vercel redacts secret values
+over 32 characters from build logs, which the Apps Script URL comfortably is.
+
+Scope both to **Production**, and to **Preview** as well only if you intend
+preview deploys to record too.
 
 Then **redeploy**. `NEXT_PUBLIC_` values are baked in at build time, so the
 change does not take effect until a new build exists.
