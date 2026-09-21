@@ -40,7 +40,7 @@ body {
 }
 
 body {
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font-sans, "Outfit"), system-ui, sans-serif;
   min-height: 100vh;
   /* A warm wash instead of flat fill, so surfaces have something to sit on. */
   background:
@@ -76,7 +76,7 @@ h1,
 h2,
 h3,
 .display {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display, "Fraunces"), Georgia, serif;
   font-weight: 560;
   letter-spacing: -0.03em;
   text-wrap: balance;
@@ -116,7 +116,7 @@ p {
   color: white;
   display: grid;
   place-items: center;
-  font-family: "Fraunces", serif;
+  font-family: var(--font-display, "Fraunces"), Georgia, serif;
   font-size: 18px;
   box-shadow: 0 8px 16px rgba(194, 78, 29, 0.28);
 }
@@ -263,7 +263,7 @@ p {
   align-items: center;
   gap: 9px;
   color: var(--muted);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   position: relative;
 }
@@ -274,14 +274,13 @@ p {
   border-radius: 50%;
   background: #27a35a;
   flex-shrink: 0;
-  animation: pulse 2s ease-in-out infinite;
+  /* Deliberately not pulsing. A looped glow on a status dot is the standard
+     AI-generated tell, and the waveform beside it already says "live". */
 }
 
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(39, 163, 90, 0.4); }
-  50% { box-shadow: 0 0 0 7px rgba(39, 163, 90, 0); }
-}
-
+/* The only looping animation on the site. It earns it: the waveform IS the
+   illustration of a call in progress, and nothing else here loops. It stops
+   entirely under prefers-reduced-motion. */
 .wave {
   display: flex;
   gap: 5px;
@@ -361,7 +360,7 @@ p {
 }
 
 .section-head .lede {
-  font-size: 16.5px;
+  font-size: 16px;
   max-width: none;
 }
 
@@ -407,7 +406,7 @@ p {
   border-radius: 50%;
   background: linear-gradient(140deg, var(--terracotta), var(--terracotta-deep));
   color: #fff;
-  font-family: "Fraunces", serif;
+  font-family: var(--font-display, "Fraunces"), Georgia, serif;
   font-size: 16px;
   font-weight: 600;
   box-shadow: 0 6px 14px rgba(194, 78, 29, 0.26);
@@ -422,7 +421,7 @@ p {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
-  font-size: 15.5px;
+  font-size: 16px;
 }
 
 /* ---------- inner pages ---------- */
@@ -460,7 +459,7 @@ p {
 }
 
 label {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -487,7 +486,7 @@ label {
 /* The hint drops to its own line before the heading is allowed to wrap. */
 .fieldset-head .meta {
   flex: 1 1 220px;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
 .rule {
@@ -626,7 +625,7 @@ textarea:user-invalid {
 }
 
 .who {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -647,7 +646,7 @@ textarea:user-invalid {
   padding-top: 7px;
   border-top: 1px solid var(--hairline);
   color: var(--muted);
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -669,7 +668,7 @@ textarea:user-invalid {
 
 .request-note {
   margin: 9px 0 0;
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -693,7 +692,7 @@ textarea:user-invalid {
   background: #fdeae5;
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  font-size: 14.5px;
+  font-size: 14px;
   box-shadow: inset 0 0 0 1px rgba(140, 26, 18, 0.15);
 }
 
