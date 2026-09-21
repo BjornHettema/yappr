@@ -2,8 +2,22 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { businessTypes, localLanguages, travelerLanguages } from "@/lib/languages";
+import { businessTypes, languageGroups } from "@/lib/languages";
 import { CALL_BRIEF_KEY, defaultBrief, saveJson, type CallBrief } from "@/lib/types";
+
+function LanguageOptions() {
+  return (
+    <>
+      {languageGroups.map((group) => (
+        <optgroup key={group.region} label={group.region}>
+          {group.languages.map((language) => (
+            <option key={language}>{language}</option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
+}
 
 export default function CallSetupPage() {
   const router = useRouter();
@@ -36,9 +50,7 @@ export default function CallSetupPage() {
               value={brief.travelerLanguage}
               onChange={(e) => update("travelerLanguage", e.target.value)}
             >
-              {travelerLanguages.map((language) => (
-                <option key={language}>{language}</option>
-              ))}
+              <LanguageOptions />
             </select>
           </label>
           <label className="field">
@@ -47,9 +59,7 @@ export default function CallSetupPage() {
               value={brief.localLanguage}
               onChange={(e) => update("localLanguage", e.target.value)}
             >
-              {localLanguages.map((language) => (
-                <option key={language}>{language}</option>
-              ))}
+              <LanguageOptions />
             </select>
           </label>
           <label className="field">
