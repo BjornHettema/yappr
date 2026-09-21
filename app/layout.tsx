@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces, Outfit } from "next/font/google";
 import ThemeToggle from "@/app/components/ThemeToggle";
+import { THEME_KEY } from "@/lib/types";
 import "./globals.css";
 
 /**
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
  * script or a useEffect both run after the browser has already painted.
  * No stored choice means follow the operating system.
  */
-const themeScript = `(function(){try{var s=localStorage.getItem("yappr.theme");var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";}catch(e){document.documentElement.dataset.theme="light";}})();`;
+const themeScript = `(function(){try{var s=localStorage.getItem("${THEME_KEY}");var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";}catch(e){document.documentElement.dataset.theme="light";}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

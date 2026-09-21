@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export function openaiHeaders() {
+function openaiHeaders() {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
     throw new Error("Missing OPENAI_API_KEY");
@@ -15,10 +15,10 @@ export function realtimeModel() {
   return process.env.OPENAI_REALTIME_MODEL || "gpt-realtime";
 }
 
-export const CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+const CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
 
 /** An OpenAI call that came back with a non-2xx status, carrying that status. */
-export class OpenAIRequestError extends Error {
+class OpenAIRequestError extends Error {
   status: number;
 
   constructor(message: string, status: number) {

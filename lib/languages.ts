@@ -70,8 +70,6 @@ export const languageGroups = [
   },
 ];
 
-export const languages = languageGroups.flatMap((group) => group.languages);
-
 export const businessTypes = [
   { value: "restaurant", label: "Restaurant / cafe" },
   { value: "hotel", label: "Hotel / guesthouse" },

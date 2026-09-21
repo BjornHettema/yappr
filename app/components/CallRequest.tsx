@@ -1,7 +1,7 @@
 import { businessTypes } from "@/lib/languages";
 import type { CallBrief } from "@/lib/types";
 
-export function businessTypeLabel(value: string) {
+function businessTypeLabel(value: string) {
   return businessTypes.find((type) => type.value === value)?.label || value;
 }
 

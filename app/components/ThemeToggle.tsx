@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-export const THEME_KEY = "yappr.theme";
+import { THEME_KEY } from "@/lib/types";
 
 /**
  * Light/dark switch.

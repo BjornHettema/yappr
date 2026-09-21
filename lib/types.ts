@@ -34,6 +34,8 @@ export type CallBrief = {
 export const CALL_BRIEF_KEY = "yappr.callBrief";
 export const TRANSCRIPT_KEY = "yappr.transcript";
 export const SUMMARY_KEY = "yappr.summary";
+/** Light/dark preference. Read by the pre-paint script in app/layout.tsx too. */
+export const THEME_KEY = "yappr.theme";
 
 export const defaultBrief: CallBrief = {
   travelerLanguage: "English",

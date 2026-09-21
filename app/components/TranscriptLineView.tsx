@@ -1,6 +1,6 @@
 import type { Speaker, TranscriptLine } from "@/lib/types";
 
-export function speakerLabel(speaker: Speaker, businessName?: string) {
+function speakerLabel(speaker: Speaker, businessName?: string) {
   if (speaker === "yappr") return "Yappr";
   if (speaker === "business") return businessName?.trim() || "The business";
   return "You";
