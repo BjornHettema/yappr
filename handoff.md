@@ -24,7 +24,7 @@ Implemented every refactor the previous session's audit recommended (it was audi
 
 ### How it was verified (no test suite, so: by hand)
 
-- `npm run lint`, `npm run typecheck`, `npm run build` all clean — same three checks CI runs.
+- `npm run lint`, `npm run typecheck`, `npm run build` all clean — same three checks CI runs. CI itself then went **green on `36f4b91`** (checked via the public Actions page with WebFetch — that works even though the GitHub *API* is blocked in this sandbox; useful trick for the next session).
 - Dev server smoke test: `/`, `/call`, `/call/live`, `/call/summary` all 200.
 - API error-shape regression check with no `OPENAI_API_KEY` set: `/api/translate` → 500 `{"error":"Missing OPENAI_API_KEY"}`, `/api/summary` → same, `/api/realtime/session` with an empty body → 400 `{"error":"Missing call details."}`. Identical to pre-refactor behavior.
 - Rendered `TranscriptLineView` through a throwaway page under `app/` (deleted again before committing) and asserted the markup: correct `line <speaker>` class, correct friendly label for all three speakers, business-name fallback, `· speaking` suffix on the partial line, and no `translation` div when the translation is empty.
@@ -34,13 +34,12 @@ Implemented every refactor the previous session's audit recommended (it was audi
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox** (org policy). Any Vercel action (checking deploys, env vars, redeploys) has to go through Jeroen via the Vercel dashboard.
 - **`gh` CLI OAuth device-flow login is blocked** by the sandbox proxy. Pushing needs a fresh user-supplied fine-grained PAT used transiently via `http.extraHeader`, per `CLAUDE.md`. Ask for a token each session; don't assume a prior one is still valid. (Plain `git push` without a token was not granted this session either.)
-- **Unauthenticated GitHub API calls (CI run status, etc.) are refused** in this sandbox. Either use `gh api` with the session's PAT, or ask Jeroen to glance at the Actions tab.
+- **GitHub API calls are refused** in this sandbox ("GitHub access to this repository is not enabled for this session. Use add_repo…") — and there is still no `add_repo` tool to invoke, even with a valid PAT in the header, so don't hunt for it. Workaround that does work: `WebFetch` on https://github.com/BjornHettema/yappr/actions reads CI status fine, since the repo is public.
 
 ## What it should do next
 
-1. **Confirm CI went green** on the push from this session (the refactor commit) — it wasn't observable from here.
-2. **Rotate `SITE_PASSCODE` away from `admin`.** This is now the oldest open item and it's a two-minute change in the Vercel dashboard (Jeroen has to do it; Claude can't reach Vercel). Do this before the link goes to any tester.
-3. **Get 3–5 real non-technical-traveler testers on the deployed app** and collect feedback. This is the one open item nothing else can substitute for, and everything below it is speculative until it's done. Offer to draft the invite message and a lightweight feedback form.
-4. Longer-term, unstarted: real outbound calling via Twilio Voice + a media-stream bridge (needs its own always-on service, doesn't fit serverless Next.js — see `README.md`), then a shorter custom domain.
+1. **Rotate `SITE_PASSCODE` away from `admin`.** This is now the oldest open item and it's a two-minute change in the Vercel dashboard (Jeroen has to do it; Claude can't reach Vercel). Do this before the link goes to any tester.
+2. **Get 3–5 real non-technical-traveler testers on the deployed app** and collect feedback. This is the one open item nothing else can substitute for, and everything below it is speculative until it's done. Offer to draft the invite message and a lightweight feedback form.
+3. Longer-term, unstarted: real outbound calling via Twilio Voice + a media-stream bridge (needs its own always-on service, doesn't fit serverless Next.js — see `README.md`), then a shorter custom domain.
 
-Nothing in the codebase is blocking any of the above — the code is in good shape and the maintenance backlog the last audit raised is empty. The next real risk is building more features before step 3 tells you which ones matter.
+Nothing in the codebase is blocking any of the above — the code is in good shape and the maintenance backlog the last audit raised is empty. The next real risk is building more features before step 2 tells you which ones matter.
