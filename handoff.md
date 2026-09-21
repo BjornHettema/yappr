@@ -80,6 +80,12 @@ Destinations: a one-line `[YAPPR-TEST-LOG]` JSON record on stdout (Vercel runtim
 
 `TESTING-ONLY.md` at the repo root is the removal checklist, and `CLAUDE.md` points at it. Every file involved carries a `TEMPORARY - USER TESTING PHASE ONLY` banner.
 
+**Live and collecting as of `a6948d9`.** Jeroen deployed the Apps Script collector and set both env vars (`NEXT_PUBLIC_ENABLE_TEST_LOGGING` as Config, `TEST_LOG_WEBHOOK_URL` as Secret). Verified end to end: rows land in the Sheet with transcript, summary and commit stamp.
+
+**The logging immediately earned its keep**, which is the useful part of this note. The first real session — a Lisbon apartment host explaining that the key is in a lockbox — was recorded as `outcome: "booked"` when nothing had been booked, because the enum only offered booked/pending/unavailable/unclear. Since the homepage examples are now mostly *information* errands (key pickup, opening hours, lost jacket, pharmacy), most calls would have been misclassified and sorting the research by outcome would have misled. Fixed in `a6948d9` by adding an **`answered`** outcome, and `summaryPrompt()` now explains what each value means instead of listing them bare. Re-tested with an information-only call: correctly returns `answered`, labelled "You have your answer".
+
+Two lessons for whoever reads the research: rows before `a6948d9` use the old enum, and the `commitMessage` column carried the full commit body until `c5fda36` (subject line only after that).
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
