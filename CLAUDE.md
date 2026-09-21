@@ -114,27 +114,35 @@ safety net.
 
 ## Codebase map (graphify)
 
-**Currently not worth it, and deliberately downgraded from a standing
-recommendation to a conditional one.** This repo is ~24 files and ~2,000
-lines; the Layout section above describes every file in twenty lines, which is
-faster to read than a generated graph is to produce. A session that touched
-essentially every file in the project did not reach for graphify once.
-
-Reach for it if that stops being true: the file count doubles, someone arrives
-who cannot hold the structure in their head, or you need to know what a change
-affects before making it.
+Worth running at the start of a session that touches several files, and again
+after a refactor. It is ~0.6s, deterministic, tree-sitter based, and costs no
+API tokens.
 
 ```bash
 pip install graphifyy --break-system-packages   # or: uv tool install graphifyy
-graphify update .                                # deterministic, tree-sitter based, no LLM/API cost, ~1s
+graphify update .
+graphify explain "LiveCall()"                    # one node and everything it touches
+graphify path "A" "B"                            # how two things connect
 ```
 
-It writes `graphify-out/` (gitignored): `graph.json`, an interactive
-`graph.html`, and `GRAPH_REPORT.md` listing god nodes, communities, cross-file
-call edges and undocumented symbols. Regenerate rather than trusting a stale
-copy. Useful follow-ups: `graphify query "<question>"`, `graphify explain "X"`,
-`graphify affected "X"`.
+Writes `graphify-out/` (gitignored): `graph.json`, an interactive `graph.html`,
+and `GRAPH_REPORT.md`. Regenerate rather than trusting a stale copy; the report
+prints the commit it was built from.
 
-For finding dead code and unused exports, `npx knip` has been the more useful
-tool at this size, and is worth running at the end of any session that
-refactors across files.
+**What it is good for here.** The god-node list is the real payoff: it is how
+`LiveCall()` was identified as the one oversized module in the codebase (19
+edges, 11 nested functions, far ahead of anything else). It also verifies there
+are no import cycles, and `graphify explain` is a fast way to see everything a
+function touches before changing it.
+
+**What to ignore in the report.** It indexes markdown as well as code, so
+`handoff.md` and ADR headings show up as god nodes and as "surprising
+connections" — those are just documents mentioning function names, not
+structure. Likewise `package.json` and `tsconfig.json` keys form their own
+"communities" and it will suggest splitting them into modules; they are
+manifests, ignore it. The "isolated nodes" count is mostly types and constants
+with naturally few edges. Read the god nodes, the cycles check and the
+communities that correspond to real source files; skip the rest.
+
+For dead code and unused exports specifically, `npx knip` is the sharper tool
+and complements this well. Run both at the end of a refactoring session.

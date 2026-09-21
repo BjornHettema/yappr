@@ -96,6 +96,10 @@ Also checked that every CSS class in `globals.css` is still referenced from JSX 
 
 `npx knip` is worth running at the end of any session that refactors across files.
 
+**graphify is in use, at Jeroen's direction.** An earlier draft of this session downgraded it on the grounds that nothing had reached for it; Jeroen asked for it to stay, and running it proved him right on the substance. `CLAUDE.md` now says what it is good for and — more usefully — what to ignore in its report, because it indexes markdown too and the doc headings crowd the god-node list.
+
+**Its one concrete finding, still open:** `LiveCall()` is by a distance the most connected thing in the codebase — 19 edges and 11 nested functions in a single ~450-line client component handling WebRTC setup, transcript state, translation, the business simulator, coaching, hangup, summary and test logging. Nothing is broken, but it is the obvious next refactor if anyone touches that file substantially. Splitting the realtime connection and the transcript state into hooks is the natural cut.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
