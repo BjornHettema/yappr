@@ -114,19 +114,27 @@ safety net.
 
 ## Codebase map (graphify)
 
-At the start of a session touching more than one or two files, it's worth
-building a quick structural map of the repo instead of reading files
-one-by-one to figure out what calls what:
+**Currently not worth it, and deliberately downgraded from a standing
+recommendation to a conditional one.** This repo is ~24 files and ~2,000
+lines; the Layout section above describes every file in twenty lines, which is
+faster to read than a generated graph is to produce. A session that touched
+essentially every file in the project did not reach for graphify once.
+
+Reach for it if that stops being true: the file count doubles, someone arrives
+who cannot hold the structure in their head, or you need to know what a change
+affects before making it.
 
 ```bash
 pip install graphifyy --break-system-packages   # or: uv tool install graphifyy
 graphify update .                                # deterministic, tree-sitter based, no LLM/API cost, ~1s
 ```
 
-This writes `graphify-out/graph.json`, `graph.html` (open the HTML in a
-browser for an interactive view), and `GRAPH_REPORT.md` (god nodes,
-communities, cross-file call edges, isolated/undocumented symbols). It's
-gitignored — regenerate it fresh each session with the command above rather
-than trusting a committed copy, since it goes stale the moment code changes.
-Useful follow-ups: `graphify query "<question>"`, `graphify explain "X"`,
-`graphify affected "X"` (see `graphify --help`).
+It writes `graphify-out/` (gitignored): `graph.json`, an interactive
+`graph.html`, and `GRAPH_REPORT.md` listing god nodes, communities, cross-file
+call edges and undocumented symbols. Regenerate rather than trusting a stale
+copy. Useful follow-ups: `graphify query "<question>"`, `graphify explain "X"`,
+`graphify affected "X"`.
+
+For finding dead code and unused exports, `npx knip` has been the more useful
+tool at this size, and is worth running at the end of any session that
+refactors across files.
