@@ -25,7 +25,7 @@ export const callExamples: CallExample[] = [
     language: "Thai",
     lang: "th",
     original: "มีโต๊ะสำหรับสองท่าน เวลา 19:00 ค่ะ ติดหน้าต่างได้ไหมคะ",
-    translation: "Table for two at 7:00pm — is a window seat possible?",
+    translation: "Table for two at 7:00pm. Is a window seat possible?",
   },
   {
     business: "Ryokan Aoi",

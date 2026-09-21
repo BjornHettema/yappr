@@ -19,6 +19,9 @@
   --lift-lg: 0 4px 8px rgba(56, 32, 16, 0.05), 0 28px 64px rgba(56, 32, 16, 0.13);
   --shadow: var(--lift-lg);
 
+  /* One radius scale, applied by role and nothing else:
+     interactive controls are full pills, panels and cards use --radius-lg,
+     speech bubbles and inset blocks --radius-md, form fields --radius-sm. */
   --radius-sm: 14px;
   --radius-md: 20px;
   --radius-lg: 28px;
@@ -248,7 +251,7 @@ p {
 .postcard {
   position: relative;
   padding: 26px 26px 30px;
-  border-radius: 34px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(168deg, var(--paper), #fdf3e6);
   box-shadow: var(--lift-lg), inset 0 0 0 1px var(--hairline);
   /* A card called "postcard" may as well sit like one. */
@@ -281,16 +284,6 @@ p {
   font-size: 14px;
   font-weight: 500;
   position: relative;
-}
-
-.live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #27a35a;
-  flex-shrink: 0;
-  /* Deliberately not pulsing. A looped glow on a status dot is the standard
-     AI-generated tell, and the waveform beside it already says "live". */
 }
 
 /* The only looping animation on the site. It earns it: the waveform IS the
@@ -335,7 +328,7 @@ p {
 .bubble {
   position: relative;
   padding: 15px 18px;
-  border-radius: 22px 22px 22px 7px;
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
   background: #fff;
   box-shadow: var(--lift-sm);
   max-width: 94%;
@@ -621,19 +614,19 @@ textarea:user-invalid {
 }
 
 .line.yappr {
-  border-radius: 22px 22px 22px 7px;
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
   background: linear-gradient(170deg, #fff, rgba(194, 78, 29, 0.05));
   margin-right: auto;
 }
 
 .line.business {
-  border-radius: 22px 22px 7px 22px;
+  border-radius: var(--radius-md) var(--radius-md) 6px var(--radius-md);
   background: linear-gradient(170deg, #fff, rgba(31, 106, 100, 0.06));
   margin-left: auto;
 }
 
 .line.you {
-  border-radius: 22px;
+  border-radius: var(--radius-md);
   background: linear-gradient(170deg, #fff, rgba(215, 161, 74, 0.09));
   margin-left: auto;
   max-width: 78%;
@@ -819,7 +812,6 @@ ul.clean li {
   }
 
   .wave span,
-  .live-dot,
   .fade-in {
     animation: none;
   }

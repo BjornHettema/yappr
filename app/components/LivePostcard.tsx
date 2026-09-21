@@ -25,7 +25,6 @@ export default function LivePostcard() {
   return (
     <aside className="postcard">
       <div className="postcard-head">
-        <span className="live-dot" aria-hidden="true" />
         On the line with {example.business} · {example.place}
       </div>
 

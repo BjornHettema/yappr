@@ -9,8 +9,8 @@ export default function HomePage() {
           <span className="kicker">For travelers who need a table, a room, or a yes</span>
           <h1>Call like a local. Understand every word.</h1>
           <p className="lede">
-            Type what you need. Yappr dials the shop, clinic, or kitchen in their language,
-            shows the conversation as it happens, and leaves you a summary — not a shrug.
+            Type what you need. Yappr calls in their language, shows every word as it happens,
+            and writes up the answer.
           </p>
           <div className="actions">
             <Link className="btn btn-primary" href="/call">
@@ -26,7 +26,6 @@ export default function HomePage() {
 
       <section id="how" className="how">
         <div className="section-head">
-          <span className="kicker">No talking out loud. No guessing what they said.</span>
           <h2>How it works</h2>
           <p className="lede">Four simple steps. You never have to speak the language, or speak at all.</p>
         </div>
@@ -34,7 +33,7 @@ export default function HomePage() {
           <li className="step">
             <span className="step-num">1</span>
             <h3>Type what you need</h3>
-            <p>A table, a room, an appointment, a question. Just type it in your own language — no phone call from you, no awkward small talk.</p>
+            <p>A table, a room, an appointment, a question. Just type it in your own language. No phone call from you, no awkward small talk.</p>
           </li>
           <li className="step">
             <span className="step-num">2</span>
@@ -49,7 +48,7 @@ export default function HomePage() {
           <li className="step">
             <span className="step-num">4</span>
             <h3>Get your answer</h3>
-            <p>A short, plain summary when the call ends — what was agreed, and what to do next.</p>
+            <p>A short, plain summary when the call ends: what was agreed, and what to do next.</p>
           </li>
         </ol>
       </section>
