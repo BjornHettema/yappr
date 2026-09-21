@@ -1,17 +1,58 @@
 :root {
-  --cream: #f4eee4;
-  --paper: #fffaf3;
-  --ink: #1c1612;
-  --muted: #6d6258;
-  --line: rgba(28, 22, 18, 0.12);
-  --hairline: rgba(28, 22, 18, 0.07);
-  /* Input borders identify a UI component, so WCAG 1.4.11 wants >= 3:1
-     against the field. 0.5 alpha measures 3.4:1 on white. */
-  --field-border: rgba(28, 22, 18, 0.5);
+  color-scheme: light dark;
+
+  /* Brand hues. These are the identity and do not change between modes;
+     the tokens below decide how each one is used on a given background. */
   --terracotta: #c24e1d;
   --terracotta-deep: #9b3912;
+  --terracotta-light: #e08a3c;
   --teal: #1f6a64;
   --gold: #d7a14a;
+
+  /* Surfaces and text */
+  --bg: #f4eee4;
+  --surface: #fffaf3;
+  --surface-2: #ffffff;
+  --surface-tint: #fdf3e6;
+  --text: #1c1612;
+  --text-muted: #6d6258;
+
+  /* Brand hues used AS TEXT, which needs more contrast than a fill does */
+  --accent-text: var(--terracotta-deep);
+  --teal-text: var(--teal);
+  --accent-ink: #ffffff;
+
+  /* Lines, edges and tints */
+  --line: rgba(28, 22, 18, 0.12);
+  --hairline: rgba(28, 22, 18, 0.07);
+  --field-bg: #ffffff;
+  --field-border: rgba(28, 22, 18, 0.5);
+  --field-border-hover: rgba(28, 22, 18, 0.7);
+  --placeholder: rgba(109, 98, 88, 0.9);
+  --ghost-bg: rgba(255, 250, 243, 0.7);
+  --selection: rgba(194, 78, 29, 0.18);
+  --route: rgba(194, 78, 29, 0.35);
+  --accent-edge: rgba(194, 78, 29, 0.16);
+  --accent-halo: rgba(194, 78, 29, 0.28);
+  --gold-edge: rgba(215, 161, 74, 0.28);
+  --tint-accent: rgba(194, 78, 29, 0.05);
+  --tint-teal: rgba(31, 106, 100, 0.06);
+  --tint-teal-strong: rgba(31, 106, 100, 0.09);
+  --tint-gold: rgba(215, 161, 74, 0.05);
+  --tint-gold-strong: rgba(215, 161, 74, 0.13);
+  --glow-gold: rgba(215, 161, 74, 0.2);
+  --glow-teal: rgba(31, 106, 100, 0.13);
+
+  /* Focus and state */
+  --focus-ring: var(--teal);
+  --focus-halo: rgba(31, 106, 100, 0.14);
+  --autofill-fill: rgba(31, 106, 100, 0.07);
+  --ok: #27a35a;
+  --ok-halo: rgba(39, 163, 90, 0.15);
+  --danger: #8c1a12;
+  --danger-bg: #fdeae5;
+  --danger-edge: rgba(140, 26, 18, 0.35);
+  --danger-halo: rgba(179, 39, 27, 0.12);
 
   /* Layered shadows read as depth; one flat shadow reads as a sticker. */
   --lift-sm: 0 1px 2px rgba(56, 32, 16, 0.05), 0 4px 12px rgba(56, 32, 16, 0.06);
@@ -19,17 +60,75 @@
   --lift-lg: 0 4px 8px rgba(56, 32, 16, 0.05), 0 28px 64px rgba(56, 32, 16, 0.13);
   --shadow: var(--lift-lg);
 
-  /* One radius scale, applied by role and nothing else:
-     interactive controls are full pills, panels and cards use --radius-lg,
-     speech bubbles and inset blocks --radius-md, form fields --radius-sm. */
   /* One easing curve for the whole site. The browser default `ease` is
      symmetrical and reads mechanical; this decelerates, which is what a
      surface settling into place actually looks like. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* One radius scale, applied by role and nothing else:
+     interactive controls are full pills, panels and cards use --radius-lg,
+     speech bubbles and inset blocks --radius-md, form fields --radius-sm. */
   --radius-sm: 14px;
   --radius-md: 20px;
   --radius-lg: 28px;
+}
+
+/**
+ * Dark mode. Not an inversion: the brand hues stay put and only the surfaces,
+ * the text and the amount of each tint change. Terracotta and teal are too
+ * dark to read as text on a dark surface, so --accent-text and --teal-text
+ * lift while the button FILL stays brand terracotta with white on it.
+ * Every pair below was measured; the lowest is white on the terracotta fill
+ * at 4.8:1 and the field border at 4.0:1 against its field.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14100d;
+    --surface: #1e1815;
+    --surface-2: #262019;
+    --surface-tint: #241d18;
+    --text: #f2e9dd;
+    --text-muted: #b0a396;
+
+    --accent-text: #e8845a;
+    --teal-text: #5fc0b4;
+
+    --line: rgba(242, 233, 221, 0.14);
+    --hairline: rgba(242, 233, 221, 0.08);
+    --field-bg: #201a16;
+    --field-border: rgba(242, 233, 221, 0.42);
+    --field-border-hover: rgba(242, 233, 221, 0.62);
+    --placeholder: rgba(242, 233, 221, 0.52);
+    --ghost-bg: rgba(242, 233, 221, 0.06);
+    --selection: rgba(226, 132, 90, 0.28);
+    --route: rgba(232, 132, 90, 0.4);
+    --accent-edge: rgba(232, 132, 90, 0.18);
+    --accent-halo: rgba(0, 0, 0, 0.5);
+    --gold-edge: rgba(226, 185, 111, 0.3);
+    --tint-accent: rgba(232, 132, 90, 0.07);
+    --tint-teal: rgba(95, 192, 180, 0.07);
+    --tint-teal-strong: rgba(95, 192, 180, 0.14);
+    --tint-gold: rgba(226, 185, 111, 0.06);
+    --tint-gold-strong: rgba(226, 185, 111, 0.14);
+    --glow-gold: rgba(215, 161, 74, 0.12);
+    --glow-teal: rgba(31, 106, 100, 0.16);
+
+    --focus-ring: #5fc0b4;
+    --focus-halo: rgba(95, 192, 180, 0.22);
+    --autofill-fill: rgba(95, 192, 180, 0.09);
+    --ok: #4cc47d;
+    --ok-halo: rgba(76, 196, 125, 0.18);
+    --danger: #ff9a86;
+    --danger-bg: #3a1a15;
+    --danger-edge: rgba(255, 154, 134, 0.38);
+    --danger-halo: rgba(255, 154, 134, 0.18);
+
+    /* Shadows do almost nothing on a dark surface, so depth comes from the
+       hairline insets already on every card, plus a deeper ambient shadow. */
+    --lift-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --lift-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 28px rgba(0, 0, 0, 0.35);
+    --lift-lg: 0 4px 10px rgba(0, 0, 0, 0.5), 0 28px 64px rgba(0, 0, 0, 0.45);
+  }
 }
 
 * {
@@ -44,7 +143,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  color: var(--ink);
+  color: var(--text);
 }
 
 body {
@@ -52,9 +151,9 @@ body {
   min-height: 100vh;
   /* A warm wash instead of flat fill, so surfaces have something to sit on. */
   background:
-    radial-gradient(1000px 560px at 8% -10%, rgba(215, 161, 74, 0.2), transparent 62%),
-    radial-gradient(860px 480px at 92% -4%, rgba(31, 106, 100, 0.13), transparent 58%),
-    var(--cream);
+    radial-gradient(1000px 560px at 8% -10%, var(--glow-gold), transparent 62%),
+    radial-gradient(860px 480px at 92% -4%, var(--glow-teal), transparent 58%),
+    var(--bg);
   background-repeat: no-repeat;
 }
 
@@ -71,11 +170,11 @@ textarea {
 }
 
 ::selection {
-  background: rgba(194, 78, 29, 0.18);
+  background: var(--selection);
 }
 
 :focus-visible {
-  outline: 3px solid var(--teal);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -120,17 +219,17 @@ p {
   width: 34px;
   height: 34px;
   border-radius: 11px;
-  background: linear-gradient(145deg, var(--terracotta), #e08a3c);
-  color: white;
+  background: linear-gradient(145deg, var(--terracotta), var(--terracotta-light));
+  color: var(--accent-ink);
   display: grid;
   place-items: center;
   font-family: var(--font-display, "Fraunces"), Georgia, serif;
   font-size: 18px;
-  box-shadow: 0 8px 16px rgba(194, 78, 29, 0.28);
+  box-shadow: 0 8px 16px var(--accent-halo);
 }
 
 .tag {
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
 }
@@ -149,8 +248,8 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(31, 106, 100, 0.09);
-  color: var(--teal);
+  background: var(--tint-teal-strong);
+  color: var(--teal-text);
   border-radius: 999px;
   padding: 7px 14px;
   font-size: 13px;
@@ -166,7 +265,7 @@ p {
 .lede {
   font-size: 18px;
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--text-muted);
   max-width: 500px;
 }
 
@@ -198,7 +297,7 @@ p {
 
 .btn-primary {
   background: linear-gradient(140deg, var(--terracotta), var(--terracotta-deep));
-  color: #fff;
+  color: var(--accent-ink);
   box-shadow: var(--lift-md);
 }
 
@@ -212,14 +311,14 @@ p {
 }
 
 .btn-ghost {
-  background: rgba(255, 250, 243, 0.7);
-  color: var(--ink);
+  background: var(--ghost-bg);
+  color: var(--text);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .btn-ghost:hover {
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px rgba(28, 22, 18, 0.22);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--field-border-hover);
 }
 
 /* Ending a live call is not the same kind of action as "Place a call", and it
@@ -227,13 +326,13 @@ p {
    next to "Send note", which invites a mis-tap that hangs up on someone. */
 .btn-danger {
   background: transparent;
-  color: #8c1a12;
-  box-shadow: inset 0 0 0 1.5px rgba(140, 26, 18, 0.45);
+  color: var(--danger);
+  box-shadow: inset 0 0 0 1.5px var(--danger-edge);
 }
 
 .btn-danger:hover {
-  background: #8c1a12;
-  color: #fff;
+  background: var(--danger);
+  color: var(--accent-ink);
   box-shadow: none;
 }
 
@@ -247,7 +346,7 @@ p {
 /* ---------- surfaces ---------- */
 
 .card {
-  background: var(--paper);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--lift-md), inset 0 0 0 1px var(--hairline);
 }
@@ -258,7 +357,7 @@ p {
   position: relative;
   padding: 26px 26px 30px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(168deg, var(--paper), #fdf3e6);
+  background: linear-gradient(168deg, var(--surface), var(--surface-tint));
   box-shadow: var(--lift-lg), inset 0 0 0 1px var(--hairline);
   /* A card called "postcard" may as well sit like one. */
   transform: rotate(-1.2deg);
@@ -279,14 +378,14 @@ p {
   width: 170px;
   height: 170px;
   border-radius: 50%;
-  border: 14px dashed rgba(194, 78, 29, 0.16);
+  border: 14px dashed var(--accent-edge);
 }
 
 .postcard-head {
   display: flex;
   align-items: center;
   gap: 9px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   position: relative;
@@ -307,7 +406,7 @@ p {
   width: 5px;
   border-radius: 99px;
   height: 100%;
-  background: linear-gradient(180deg, var(--teal), var(--terracotta));
+  background: linear-gradient(180deg, var(--teal-text), var(--terracotta-light));
   opacity: 0.85;
   animation: talk 1.2s ease-in-out infinite;
 }
@@ -335,7 +434,7 @@ p {
   position: relative;
   padding: 15px 18px;
   border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
-  background: #fff;
+  background: var(--surface-2);
   box-shadow: var(--lift-sm);
   max-width: 94%;
 }
@@ -345,7 +444,7 @@ p {
 }
 
 .postcard .bubble {
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--surface-2);
 }
 
 .bubble .original {
@@ -353,7 +452,7 @@ p {
 }
 
 .meta {
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -401,7 +500,7 @@ p {
   left: 44px;
   right: -28px;
   height: 2px;
-  background-image: linear-gradient(90deg, rgba(194, 78, 29, 0.35) 55%, transparent 55%);
+  background-image: linear-gradient(90deg, var(--route) 55%, transparent 55%);
   background-size: 9px 2px;
 }
 
@@ -419,11 +518,11 @@ p {
   height: 36px;
   border-radius: 50%;
   background: linear-gradient(140deg, var(--terracotta), var(--terracotta-deep));
-  color: #fff;
+  color: var(--accent-ink);
   font-family: var(--font-display, "Fraunces"), Georgia, serif;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 6px 14px rgba(194, 78, 29, 0.26);
+  box-shadow: 0 6px 14px var(--accent-halo);
 }
 
 .step h3 {
@@ -433,7 +532,7 @@ p {
 
 .step p {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-muted);
   line-height: 1.55;
   font-size: 16px;
 }
@@ -475,7 +574,7 @@ p {
 label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .fieldset-head {
@@ -514,11 +613,11 @@ label {
 input,
 select,
 textarea {
-  background: #fff;
+  background: var(--field-bg);
   border: 1px solid var(--field-border);
   border-radius: var(--radius-sm);
   padding: 14px 15px;
-  color: var(--ink);
+  color: var(--text);
   min-height: 50px;
   transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
@@ -526,21 +625,21 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   /* 4.7:1 on white — placeholders are still text. */
-  color: rgba(109, 98, 88, 0.9);
+  color: var(--placeholder);
 }
 
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: rgba(28, 22, 18, 0.7);
+  border-color: var(--field-border-hover);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--teal);
-  box-shadow: 0 0 0 4px rgba(31, 106, 100, 0.14);
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 4px var(--focus-halo);
 }
 
 textarea {
@@ -553,13 +652,13 @@ textarea {
    background-color can't be overridden on an autofilled field, hence box-shadow. */
 input:autofill,
 input:-webkit-autofill {
-  border: 2px solid var(--teal);
-  box-shadow: 0 0 0 100vmax rgba(31, 106, 100, 0.07) inset;
+  border: 2px solid var(--focus-ring);
+  box-shadow: 0 0 0 100vmax var(--autofill-fill) inset;
 }
 
 input:autofill:focus-visible,
 input:-webkit-autofill:focus-visible {
-  outline: 3px solid var(--teal);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -567,8 +666,8 @@ input:-webkit-autofill:focus-visible {
    so the form isn't shouting at someone who has just arrived. */
 input:user-invalid,
 textarea:user-invalid {
-  border-color: #b3271b;
-  box-shadow: 0 0 0 4px rgba(179, 39, 27, 0.12);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-halo);
 }
 
 /* ---------- live call ---------- */
@@ -590,8 +689,8 @@ textarea:user-invalid {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #27a35a;
-  box-shadow: 0 0 0 6px rgba(39, 163, 90, 0.15);
+  background: var(--ok);
+  box-shadow: 0 0 0 6px var(--ok-halo);
   display: inline-block;
 }
 
@@ -614,26 +713,26 @@ textarea:user-invalid {
 .line {
   position: relative;
   padding: 14px 17px;
-  background: #fff;
+  background: var(--surface-2);
   box-shadow: var(--lift-sm);
   max-width: 88%;
 }
 
 .line.yappr {
   border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
-  background: linear-gradient(170deg, #fff, rgba(194, 78, 29, 0.05));
+  background: linear-gradient(170deg, var(--surface-2), var(--tint-accent));
   margin-right: auto;
 }
 
 .line.business {
   border-radius: var(--radius-md) var(--radius-md) 6px var(--radius-md);
-  background: linear-gradient(170deg, #fff, rgba(31, 106, 100, 0.06));
+  background: linear-gradient(170deg, var(--surface-2), var(--tint-teal));
   margin-left: auto;
 }
 
 .line.you {
   border-radius: var(--radius-md);
-  background: linear-gradient(170deg, #fff, rgba(215, 161, 74, 0.09));
+  background: linear-gradient(170deg, var(--surface-2), var(--tint-gold));
   margin-left: auto;
   max-width: 78%;
 }
@@ -652,12 +751,12 @@ textarea:user-invalid {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
-.line.yappr .who { color: var(--terracotta-deep); }
-.line.business .who { color: var(--teal); }
+.line.yappr .who { color: var(--accent-text); }
+.line.business .who { color: var(--teal-text); }
 
 .original {
   font-size: 16px;
@@ -668,7 +767,7 @@ textarea:user-invalid {
   margin: 7px 0 0;
   padding-top: 7px;
   border-top: 1px solid var(--hairline);
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -676,11 +775,11 @@ textarea:user-invalid {
 /* ---------- the traveler's own request ---------- */
 
 .request {
-  background: linear-gradient(165deg, rgba(215, 161, 74, 0.13), rgba(215, 161, 74, 0.05));
+  background: linear-gradient(165deg, var(--tint-gold-strong), var(--tint-gold));
   border-radius: var(--radius-md);
   padding: 16px 18px;
   margin: 18px 0;
-  box-shadow: inset 0 0 0 1px rgba(215, 161, 74, 0.28);
+  box-shadow: inset 0 0 0 1px var(--gold-edge);
 }
 
 .request-goal {
@@ -693,7 +792,7 @@ textarea:user-invalid {
   margin: 9px 0 0;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .request .meta {
@@ -712,12 +811,12 @@ textarea:user-invalid {
 
 .error {
   animation: line-in 200ms var(--ease-out) both;
-  color: #8c1a12;
-  background: #fdeae5;
+  color: var(--danger);
+  background: var(--danger-bg);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   font-size: 14px;
-  box-shadow: inset 0 0 0 1px rgba(140, 26, 18, 0.15);
+  box-shadow: inset 0 0 0 1px var(--danger-edge);
 }
 
 /* ---------- summary ---------- */
@@ -741,7 +840,7 @@ textarea:user-invalid {
 ul.clean {
   margin: 8px 0 0;
   padding-left: 20px;
-  color: var(--muted);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -751,7 +850,7 @@ ul.clean li {
 
 .footer {
   padding: 28px 0 44px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -795,7 +894,7 @@ ul.clean li {
     right: auto;
     width: 2px;
     height: auto;
-    background-image: linear-gradient(180deg, rgba(194, 78, 29, 0.35) 55%, transparent 55%);
+    background-image: linear-gradient(180deg, var(--route) 55%, transparent 55%);
     background-size: 2px 9px;
   }
 
