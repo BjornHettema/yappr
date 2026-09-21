@@ -1,0 +1,94 @@
+# Setting up the test-session collector
+
+> **TEMPORARY — USER TESTING PHASE ONLY.** This whole folder goes when the
+> testing phase ends. See `TESTING-ONLY.md` at the repo root for the removal
+> checklist.
+
+Sessions are kept **permanently and deliberately** — they are research, not
+telemetry, and they are only deleted when someone decides to delete them,
+probably after release. Every record carries the commit it came from, so
+results from a build whose prompts or UI later changed can be identified and
+set aside rather than silently mixed in with newer ones.
+
+## 1. Make the Sheet
+
+1. Go to <https://sheets.new> and name it something unmistakable, e.g.
+   **Yappr test sessions (TEMPORARY — contains personal data)**.
+2. Leave it private. Do not use File → Share → Publish to the web.
+
+## 2. Add the collector script
+
+1. In the Sheet: **Extensions → Apps Script**.
+2. Delete the stub `function myFunction() {}`.
+3. Paste the entire contents of `google-sheet-collector.gs` from this folder.
+4. Save (the disk icon). Name the project `Yappr test log` if it asks.
+
+## 3. Deploy it as a web app
+
+1. **Deploy → New deployment**.
+2. Click the gear next to "Select type" and choose **Web app**.
+3. Set:
+   - **Description:** `Yappr test sessions`
+   - **Execute as:** `Me`
+   - **Who has access:** `Anyone`
+4. **Deploy**, then **Authorize access** and allow it for your Google account.
+   Google will warn that the app is unverified — that is expected for your own
+   Apps Script. Choose **Advanced → Go to Yappr test log (unsafe)**.
+5. Copy the **Web app URL**. It looks like
+   `https://script.google.com/macros/s/AKfycb…/exec`.
+
+> **"Anyone" means anyone with the URL can POST rows into the Sheet.** They
+> cannot read the Sheet, and the URL is unguessable, but treat it as a secret:
+> keep it in Vercel's environment variables and out of the repo. If it ever
+> leaks, redeploy the script to get a fresh URL.
+
+Open the URL in a browser to check it is alive. It should say
+`Yappr test-session collector is running.`
+
+## 4. Point Yappr at it
+
+In the Vercel project → **Settings → Environment Variables**, add:
+
+| Name | Value |
+| --- | --- |
+| `NEXT_PUBLIC_ENABLE_TEST_LOGGING` | `true` |
+| `TEST_LOG_WEBHOOK_URL` | the Web app URL from step 3 |
+
+Then **redeploy**. `NEXT_PUBLIC_` values are baked in at build time, so the
+change does not take effect until a new build exists.
+
+## 5. Check it end to end
+
+Place one call on the deployed site and hang up. Within a few seconds a row
+should appear in the Sheet. Confirm that:
+
+- the `commit` column matches the deploy you are testing
+- the `transcript` cell holds the full conversation
+- the brief form showed the testing notice before you started
+
+If nothing arrives, look at the Vercel runtime logs for a line starting
+`[YAPPR-TEST-LOG]`. The record is always written there too, so if the line
+exists but the row does not, the problem is the webhook, not the app.
+
+## Columns
+
+`loggedAt`, `commit`, `branch`, `environment`, `startedAt`, `durationSeconds`,
+`travelerLanguage`, `localLanguage`, `businessType`, `place`, `goal`,
+`extraNotes`, `turns`, `outcome`, `headline`, `agreed`, `unresolved`,
+`nextSteps`, `transcript`, `commitMessage`, `deploymentUrl`, `raw`.
+
+`raw` holds the complete JSON payload, so nothing is lost even if the flattened
+columns change later. Add new columns to the **end** of `HEADERS` only, or
+existing rows will stop lining up.
+
+The business phone number is deliberately not collected.
+
+## A standing warning
+
+Deleting an individual tester's data is not a problem being solved at this
+stage, by decision. Worth knowing what that means: if a tester asks for their
+records to be removed, the answer is a manual search of the Sheet, and there is
+no identifier tying rows to a person other than what they typed. That is
+acceptable for a handful of invited testers who have been told what is being
+kept. It stops being acceptable the moment this points at strangers, or the
+moment accounts exist and rows can be tied to a real identity.

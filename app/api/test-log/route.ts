@@ -23,6 +23,23 @@ import {
 } from "@/lib/testLog";
 import type { CallBrief, Summary, TranscriptLine } from "@/lib/types";
 
+/**
+ * Which build produced this session. Vercel injects these at build time, so
+ * research from a deploy whose prompts or UI later changed can be identified
+ * and set aside rather than silently mixed in with newer results.
+ */
+function buildInfo() {
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA ?? null;
+  return {
+    commit: sha ? sha.slice(0, 7) : "local",
+    commitFull: sha,
+    branch: process.env.VERCEL_GIT_COMMIT_REF ?? null,
+    commitMessage: process.env.VERCEL_GIT_COMMIT_MESSAGE ?? null,
+    deploymentUrl: process.env.VERCEL_URL ?? null,
+    environment: process.env.VERCEL_ENV ?? "development",
+  };
+}
+
 type SessionPayload = {
   brief?: CallBrief;
   lines?: TranscriptLine[];
@@ -47,9 +64,18 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as SessionPayload;
 
+    const build = buildInfo();
+
     const record = {
       marker: TEST_LOG_MARKER,
       loggedAt: new Date().toISOString(),
+      // Traceability: which build this session came from.
+      commit: build.commit,
+      commitFull: build.commitFull,
+      branch: build.branch,
+      commitMessage: build.commitMessage,
+      deploymentUrl: build.deploymentUrl,
+      environment: build.environment,
       startedAt: body.startedAt ? new Date(body.startedAt).toISOString() : null,
       durationSeconds: body.startedAt
         ? Math.round((Date.now() - body.startedAt) / 1000)

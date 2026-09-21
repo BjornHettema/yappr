@@ -15,6 +15,9 @@ record to `/api/test-log` containing:
 - the full dual-language transcript, every turn
 - the generated summary
 - timestamps and call duration
+- the commit, branch and deployment the session ran on, so results from an
+  older build can be traced and set aside if its prompts or UI have since
+  changed
 
 **This is personal data.** Names (a booking is made under someone's name), what
 a person wants, where they are, and sometimes health information, because "my
@@ -29,22 +32,27 @@ The business phone number is deliberately **not** recorded.
 - **Tell every tester, before they use it.** The brief form shows a notice
   automatically whenever logging is on. One flag drives both the notice and the
   recording, so it is not possible to record silently — do not split them.
-- **Say how long you keep it and delete it when testing ends.** Decide a
-  retention period now, not later.
+- **Retention is deliberate, not automatic.** Decision: records are kept
+  permanently until someone explicitly decides to delete them, probably after
+  release. They are research, not telemetry. Nothing expires them on its own.
 - **Do not put the records anywhere public.** A webhook into a private sheet is
   fine; a public endpoint is not.
-- If a tester asks for their data to be deleted, you need to be able to find and
-  delete it. That is easier if the destination is one sheet, not a log stream.
+- **Deleting one tester's data is not solved, by decision.** If someone asks,
+  it is a manual search of the Sheet, and nothing ties rows to a person beyond
+  what they typed. That is fine for a handful of invited testers who were told
+  what is kept. It stops being fine the moment this points at strangers, or the
+  moment accounts exist and rows can be tied to a real identity. Revisit it
+  then.
 
 ## Where the data goes
 
 | Destination | Set up by | Durable? |
 | --- | --- | --- |
 | Runtime logs (`console.log`, prefixed `[YAPPR-TEST-LOG]`) | Always on | **No.** Vercel retains runtime logs briefly. Fallback only. |
-| `TEST_LOG_WEBHOOK_URL` | Optional env var | Yes, wherever you point it. This is the real archive. |
+| `TEST_LOG_WEBHOOK_URL` | Optional env var | Yes. A Google Sheet via Apps Script — setup in `docs/testing/README.md`. This is the real archive. |
 
-Without the webhook you will lose most of the sessions. Point it at a private
-Google Sheet / Airtable / Make / Zapier endpoint before inviting testers.
+Without the webhook you will lose most of the sessions. **Set it up first:
+`docs/testing/README.md` has the Apps Script and the step-by-step.**
 
 ## How to turn it on
 
@@ -71,8 +79,11 @@ is required for a change to take effect.
    `TEST_LOG_WEBHOOK_URL`
 8. Delete the collected data once the research is written up, or move it
    somewhere with a retention policy
-9. Delete this file
-10. `grep -ri "test-log\|testLog\|TESTING-ONLY" .` should return nothing
+9. Delete `docs/testing/` (the Apps Script and its README)
+10. Delete or archive the Google Sheet itself, and undeploy the Apps Script web
+    app so the URL stops accepting posts
+11. Delete this file
+12. `grep -ri "test-log\|testLog\|TESTING-ONLY" .` should return nothing
 
 Everything added for this is marked with a
 `TEMPORARY - USER TESTING PHASE ONLY` banner comment, and every record carries
