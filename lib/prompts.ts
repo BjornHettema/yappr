@@ -109,6 +109,18 @@ One short sentence, ${brief.localLanguage} only. Then stop.`;
 }
 
 /**
+ * Every corrective instruction has to carry this. A nudge that says "wait for
+ * their confirmation" reliably produces a line like *"I have requested the
+ * table and will wait for the restaurant to confirm — I'll let you know"*,
+ * said out loud, in the local language, to the restaurant. That is the old
+ * narration bug arriving through a new door: the model starts reporting to the
+ * traveler on the call, which tells the business it is not talking to the
+ * customer.
+ */
+const NO_NARRATION =
+  "Do not narrate. Say nothing about what you have already done, what you are about to do, waiting, checking, confirming later, reporting back, or letting anyone know — and do not mention a traveler, a customer or anyone behind you. You are a local making this call for yourself.";
+
+/**
  * The traveler's decision, injected as a user message. Wrapped rather than
  * interpolated at the call site so the [TRAVELER ANSWER] channel — which the
  * agent instructions treat as final and unarguable — has exactly one spelling.
@@ -125,7 +137,7 @@ export function travelerAnswer(
 
   return `[TRAVELER ANSWER] You asked: "${question}". They answered: "${answer}". ${useIt}
 
-Speak to the business now, in their language. If the answer asks for something you have not yet put to them, put it to them and wait for their reply — do not ask the traveler whether it is possible, because they are not the ones who decide that. Do not read any of this aloud.`;
+Speak to the business now, in their language. If the answer asks for something you have not yet put to them, put it to them and wait for their reply — do not ask the traveler whether it is possible, because they are not the ones who decide that. ${NO_NARRATION} Do not read any of this aloud.`;
 }
 
 /**
@@ -145,7 +157,9 @@ Speak to the business now, in their language. If the answer asks for something y
 export function confirmationMissing(brief: CallBrief) {
   return `[CORRECTION] You have not been answered yet. You put a request to ${brief.businessName || "the business"} and nobody has replied to it, so nothing is arranged and the call cannot end.
 
-Asking for something is not the same as getting it. Wait for their reply, and if they have gone quiet, ask them plainly in ${brief.localLanguage} whether that is booked and confirmed. Do not call end_call until they have answered in their own words. Do not read any of this aloud.`;
+Asking for something is not the same as getting it. Wait for their reply, and if they have gone quiet, ask them plainly in ${brief.localLanguage} whether that is booked and confirmed. Do not call end_call until they have answered in their own words.
+
+Ask it the way a local would — one short question, nothing else. ${NO_NARRATION} Do not read any of this aloud.`;
 }
 
 export function answerNotRelayed(brief: CallBrief) {
@@ -153,7 +167,7 @@ export function answerNotRelayed(brief: CallBrief) {
 
 Do not call ask_traveler. The traveler cannot tell you what this business has free, what it costs or what it allows — only the person on the line can, and asking them reads as though you had mistaken them for the shop.
 
-Say the traveler's answer to the business now, in ${brief.localLanguage}, as a request or a question, and wait for their reply. Do not read any of this aloud.`;
+Say the traveler's answer to the business now, in ${brief.localLanguage}, as a request or a question, and wait for their reply. ${NO_NARRATION} Do not read any of this aloud.`;
 }
 
 /**
