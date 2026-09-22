@@ -206,6 +206,45 @@ back in a new grammatical costume.
 **Still needs Jeroen:** the collector re-paste from item 9 now also picks up
 two new columns, `forks` and `decisions`.
 
+### 11. Summary page rebuilt around empty states (commits `9d6e327`, `4a5e072`)
+
+Jeroen spotted the consequence of item 10's summary fix: once the model stopped
+padding "What was agreed", the page showed a heading over blank space.
+
+Every answer on the page is now a block that knows how to be empty. Where the
+emptiness is news it says so in a sentence — *"Nothing was booked or arranged,
+so there's nothing to turn up for"*, which answers the thing people actually
+worry about. Where it isn't news the block disappears: "Still open" over the
+word *none* spends two lines saying nothing. `"Nothing flagged."` is gone.
+
+**The important subtlety:** those sentences are suppressed when the write-up
+itself failed (`trustworthy` in the page). An empty `agreed` then means *we
+don't know*, and telling someone nothing was booked when a table may be
+waiting for them is worse than telling them nothing. Keep that guard if you
+touch this.
+
+Two things the design critique turned up that mattered more than the empty
+states:
+
+- **The verdict pill was teal whatever happened**, so a confirmed booking and
+  a sold-out show looked identical above the headline — on the page whose only
+  job is answering "did I get it?". It now carries a tone, with the label
+  still saying it in words and a dot backing up the colour.
+  `unavailable` is **deliberately grey, not red**: a no is a successful call
+  with a disappointing answer. New `--ok-text` / `--gold-text` tokens, because
+  `--ok` is a fill and was never safe as text. Measured 5.4:1 and 6.5:1 light,
+  7.7:1 and 7.8:1 dark.
+- **"New call" was at the bottom of the transcript card**, so on a phone the
+  one action anyone wants after a failed call sat behind every line of the call
+  that failed. It moved under the answer, and the transcript folds at six lines
+  with a fade and a "Read all N lines" button — which also stops it burying the
+  tester feedback form.
+
+Verified on the deployed site by seeding `sessionStorage` directly rather than
+placing five calls: booked, unavailable, pending and a failed write-up, in both
+themes. Worth reusing — `sessionStorage.setItem("yappr.summary", …)` then
+reload is much the fastest way to exercise this page.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
