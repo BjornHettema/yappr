@@ -981,8 +981,11 @@ ul.clean.ticked li::before {
   margin: 18px 0 0;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  background: var(--tint-gold-strong);
-  box-shadow: inset 0 0 0 1px var(--gold-edge);
+  /* Plain surface with a ring, not another tint: it sits directly under the
+     traveler's gold request block, and two tinted panels in a row read as one
+     confusing shape. */
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--gold-edge);
   font-size: 15px;
   line-height: 1.5;
 }
