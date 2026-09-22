@@ -16,11 +16,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { TRANSCRIPT_KEY, saveJson, type TranscriptLine } from "@/lib/types";
-
-function newId() {
-  return crypto.randomUUID();
-}
+import { TRANSCRIPT_KEY, newId, saveJson, type TranscriptLine } from "@/lib/types";
 
 export function useTranscript() {
   const [lines, setLines] = useState<TranscriptLine[]>([]);

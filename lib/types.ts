@@ -107,3 +107,12 @@ export function loadJson<T>(key: string, fallback: T): T {
 export function saveJson(key: string, value: unknown) {
   sessionStorage.setItem(key, JSON.stringify(value));
 }
+
+/**
+ * Ids for transcript lines, questions and the test-log session. One copy:
+ * it had drifted into two, which is how the shared transcript component and
+ * the shared OpenAI helper both came about in earlier cleanups.
+ */
+export function newId() {
+  return crypto.randomUUID();
+}

@@ -92,22 +92,32 @@ is required for a change to take effect.
 4. In `app/call/live/LiveCall.tsx`: delete `recordTestSession()`, its call
    inside `hangUp()`, the `startedAt` and `sessionId` refs, and the `testLog`
    and `SESSION_ID_KEY` imports
-5. In `app/call/summary/page.tsx`: delete the `<TestFeedback />` element, its
+5. **Still in `LiveCall.tsx`, the parts that are easy to miss because they sit
+   inside permanent code:** the `Decision` type, the `decisions` ref and
+   `recordDecision()`, plus its two call sites in `answerQuestion()` and
+   `expireQuestion()`. Nothing else reads them — they exist only to fill the
+   log.
+6. In `app/call/summary/page.tsx`: delete the `<TestFeedback />` element, its
    import, the `sessionId` state and the `SESSION_ID_KEY` import
-6. In `lib/types.ts`: delete `SESSION_ID_KEY`
-7. In `app/call/page.tsx`: delete the `.notice` block and the `testLog` import
-8. In `app/globals.css`: delete the `.notice` rule and the whole "tester
-   feedback" block (`.feedback`, `.choice`, `.choice-row`, `.chip`)
-9. In `.env.example`: delete the TESTING-ONLY block
-10. In Vercel: delete `NEXT_PUBLIC_ENABLE_TEST_LOGGING` and
+7. In `lib/types.ts`: delete `SESSION_ID_KEY`, and delete `questionRaw` from
+   `PendingQuestion` — it is only kept so the log can show when the model
+   wrote a question in the wrong language. Then remove the `questionRaw`
+   assignment in `raiseQuestion()`.
+8. In `app/call/page.tsx`: delete the `.notice` block and the `testLog` import
+9. In `app/globals.css`: delete the `.notice` rule and the whole "tester
+   feedback" block (`.feedback`, `.choice`, `.choice-row`, `.chip`). Leave the
+   `.decision-*` rules — the mid-call decision card is a product feature, not
+   part of this.
+10. In `.env.example`: delete the TESTING-ONLY block
+11. In Vercel: delete `NEXT_PUBLIC_ENABLE_TEST_LOGGING` and
     `TEST_LOG_WEBHOOK_URL`
-11. Delete the collected data once the research is written up, or move it
+12. Delete the collected data once the research is written up, or move it
     somewhere with a retention policy
-12. Delete `docs/testing/` (the Apps Script and its README)
-13. Delete or archive the Google Sheet itself — **both tabs** — and undeploy
+13. Delete `docs/testing/` (the Apps Script and its README)
+14. Delete or archive the Google Sheet itself — **both tabs** — and undeploy
     the Apps Script web app so the URL stops accepting posts
-14. Delete this file
-15. `grep -ri "test-log\|testLog\|TESTING-ONLY\|TestFeedback\|SESSION_ID_KEY" .`
+15. Delete this file
+16. `grep -rin "test-log\|testlog\|TESTING-ONLY\|TestFeedback\|SESSION_ID_KEY\|questionRaw\|recordDecision" .`
     should return nothing
 
 Everything added for this is marked with a

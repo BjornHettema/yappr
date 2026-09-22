@@ -10,6 +10,7 @@ import {
   TRANSCRIPT_KEY,
   defaultBrief,
   loadJson,
+  newId,
   saveJson,
   type CallBrief,
   type PendingQuestion,
@@ -62,10 +63,6 @@ type Decision = {
   answer: string;
   secondsToAnswer: number;
 };
-
-function newId() {
-  return crypto.randomUUID();
-}
 
 export default function LiveCall() {
   const router = useRouter();

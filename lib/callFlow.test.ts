@@ -20,7 +20,6 @@ import {
   holdLineRequested,
   initialCallFlow,
   isLeadingOption,
-  line,
   parseAskTraveler,
   secondsRemaining,
   shouldCorrectQuestion,
@@ -29,6 +28,12 @@ import {
   windUpStarted,
   yapprSpoke,
 } from "./callFlow";
+import type { Speaker } from "./types";
+
+/** Lets the cases below read as conversations rather than object literals. */
+function line(speaker: Speaker) {
+  return { speaker };
+}
 
 describe("the hold line is not a turn", () => {
   it("still counts the answer as unspoken after only a hold line", () => {

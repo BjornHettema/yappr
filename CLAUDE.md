@@ -32,12 +32,19 @@ app/
   api/access/route.ts              Checks the passcode, sets the access cookie
   components/TranscriptLineView.tsx  One transcript line, shared by live call + summary
   components/DecisionPrompt.tsx      The docked mid-call "they're holding for you" question
+  call/live/useRealtimeCall.ts       The browser->OpenAI WebRTC leg: events out, send in
+  call/live/useTranscript.ts         The transcript list, its ref, and persistence
 lib/
+  callFlow.ts     The mid-call decision protocol as pure, TESTED logic — the
+                  flow state machine, ask_traveler parsing, the hang-up guard
+  callFlow.test.ts       Every case is a bug that reached a live call
+  realtimeEvents.ts      Realtime event names -> one tagged union (tested)
   languages.ts    Dropdown options (traveler/local languages, business types)
   openai.ts       OpenAI headers/models, the shared `callOpenAI` fetch wrapper,
-                  route `errorResponse` helper + the `end_call` tool definition
-  prompts.ts      All LLM prompt strings (agent, business simulator, summary)
-  types.ts        Shared types + sessionStorage read/write helpers
+                  route `errorResponse` helper + the tool definitions
+  prompts.ts      All LLM prompt strings (agent, business simulator, summary,
+                  the holding line and the mid-call corrections)
+  types.ts        Shared types, sessionStorage read/write helpers, `newId`
 middleware.ts     Early-access passcode gate (see below)
 ```
 

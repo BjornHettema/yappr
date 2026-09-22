@@ -26,7 +26,7 @@
  * these back into a prompt instruction fails CI instead of failing a tester.
  */
 
-import type { PendingQuestion, Speaker, TranscriptLine } from "./types";
+import type { PendingQuestion, TranscriptLine } from "./types";
 
 /** What the tool call asks for, once normalised. */
 export type AskTravelerArgs = Pick<
@@ -196,9 +196,4 @@ export function parseAskTraveler(rawArgs: string | undefined): AskTravelerArgs |
 /** Only a yes/no gets a leading option; alternatives are peers. */
 export function isLeadingOption(kind: PendingQuestion["kind"], index: number) {
   return kind === "confirm" && index === 0;
-}
-
-/** Test helper shape, kept here so the tests read as conversations. */
-export function line(speaker: Speaker): Pick<TranscriptLine, "speaker"> {
-  return { speaker };
 }
