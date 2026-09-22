@@ -417,20 +417,9 @@ Vitest, `npm test`. No behaviour change intended; `LiveCall.tsx` went 847 →
 789 lines and `DecisionPrompt` now shares the tested `isLeadingOption` instead
 of repeating the rule.
 
-**One thing needs Jeroen, because the PAT can't do it.** GitHub refuses a
-fine-grained token without `workflow` scope on `.github/workflows/`, so the
-CI step was not pushed. Until it is, the tests only run locally. Add this
-between `typecheck` and `build` in `.github/workflows/ci.yml`:
-
-```yaml
-      # Pins the mid-call decision guards. Each case in lib/callFlow.test.ts is
-      # a bug that reached a live call, so a failure here is a regression, not
-      # a stale test. See the file header before "simplifying" one away.
-      - run: npm test
-```
-
-Either edit it in GitHub's web editor, or hand a future session a PAT with
-`workflow` scope.
+`npm test` runs in CI between `typecheck` and `build`. That step needed a
+second push with a `workflow`-scoped PAT — the first attempt was rejected and
+took the whole push with it, which is now in the standing blockers.
 
 ## What failed / known blockers (standing)
 
