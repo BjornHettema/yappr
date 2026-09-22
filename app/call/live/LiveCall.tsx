@@ -13,7 +13,6 @@ import {
   saveJson,
   type CallBrief,
   type PendingQuestion,
-  type TranscriptLine,
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
@@ -39,16 +38,13 @@ import {
   windUpStarted,
   yapprSpoke,
 } from "@/lib/callFlow";
+import {
+  classifyRealtimeEvent,
+  type RealtimeEvent,
+} from "@/lib/realtimeEvents";
 import { testLoggingActive } from "@/lib/testLog";
-
-type RealtimeEvent = {
-  type: string;
-  delta?: string;
-  transcript?: string;
-  name?: string;
-  arguments?: string;
-  call_id?: string;
-};
+import { useRealtimeCall } from "./useRealtimeCall";
+import { useTranscript } from "./useTranscript";
 
 /** One fork the traveler was asked to settle. Kept for the summary and the log. */
 type Decision = {
@@ -67,17 +63,6 @@ type Decision = {
   secondsToAnswer: number;
 };
 
-function silentTrack() {
-  const context = new AudioContext();
-  const dest = context.createMediaStreamDestination();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  gain.gain.value = 0.0001;
-  oscillator.connect(gain).connect(dest);
-  oscillator.start();
-  return { context, track: dest.stream.getAudioTracks()[0] };
-}
-
 function newId() {
   return crypto.randomUUID();
 }
@@ -89,8 +74,7 @@ export default function LiveCall() {
   const [listenLive, setListenLive] = useState(false);
   const [error, setError] = useState("");
   const [coach, setCoach] = useState("");
-  const [lines, setLines] = useState<TranscriptLine[]>([]);
-  const [partial, setPartial] = useState("");
+  const { lines, linesRef, partial, setPartial, pushLine } = useTranscript();
   const [pending, setPending] = useState<PendingQuestion | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(ANSWER_WINDOW_SECONDS);
 
@@ -100,9 +84,6 @@ export default function LiveCall() {
   /** A question being translated into the traveler's language, not yet shown. */
   const preparingQuestion = useRef(false);
   const decisions = useRef<Decision[]>([]);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const dcRef = useRef<RTCDataChannel | null>(null);
-  const linesRef = useRef<TranscriptLine[]>([]);
   const hangingUp = useRef(false);
   const startedAt = useRef(Date.now());
   // TEMPORARY - testing phase: ties this call's log row to its feedback row.
@@ -122,11 +103,6 @@ export default function LiveCall() {
    * through. Read that file before changing any of this.
    */
   const flow = useRef(initialCallFlow());
-
-  useEffect(() => {
-    linesRef.current = lines;
-    saveJson(TRANSCRIPT_KEY, lines);
-  }, [lines]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.muted = !listenLive;
@@ -150,100 +126,38 @@ export default function LiveCall() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pending?.id]);
 
+  // The brief lives in sessionStorage, so a fresh tab has nothing to call
+  // about. Bounce back to the form rather than dialling with no request.
   useEffect(() => {
-    if (!brief.goal || !brief.businessName) {
-      router.replace("/call");
-      return;
-    }
-
-    let cancelled = false;
-    const extra: AudioContext[] = [];
-
-    async function connect() {
-      try {
-        const tokenRes = await fetch("/api/realtime/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(brief),
-        });
-        const tokenData = await tokenRes.json();
-        if (!tokenRes.ok) throw new Error(tokenData.error || "Could not mint a live session.");
-
-        const pc = new RTCPeerConnection();
-        pcRef.current = pc;
-
-        pc.ontrack = (event) => {
-          if (audioRef.current) {
-            audioRef.current.srcObject = event.streams[0];
-          }
-        };
-
-        const silent = silentTrack();
-        extra.push(silent.context);
-        pc.addTrack(silent.track);
-
-        const dc = pc.createDataChannel("oai-events");
-        dcRef.current = dc;
-        dc.addEventListener("open", () => {
-          if (cancelled) return;
-          setStatus("On the line");
-          send({
-            type: "response.create",
-            response: { instructions: callOpeningInstructions(brief) },
-          });
-        });
-        dc.addEventListener("message", (event) => {
-          try {
-            onRealtime(JSON.parse(event.data) as RealtimeEvent);
-          } catch {
-            /* ignore malformed events */
-          }
-        });
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
-          method: "POST",
-          body: offer.sdp,
-          headers: {
-            Authorization: `Bearer ${tokenData.value}`,
-            "Content-Type": "application/sdp",
-          },
-        });
-
-        if (!sdpResponse.ok) {
-          throw new Error("The live voice service rejected the call setup.");
-        }
-
-        const answer = { type: "answer" as const, sdp: await sdpResponse.text() };
-        await pc.setRemoteDescription(answer);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Could not start the call.");
-          setStatus("Failed");
-        }
-      }
-    }
-
-    connect();
-
-    return () => {
-      cancelled = true;
-      hangingUp.current = true;
-      dcRef.current?.close();
-      pcRef.current?.close();
-      extra.forEach((ctx) => ctx.close());
-    };
+    if (!brief.goal || !brief.businessName) router.replace("/call");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function send(payload: unknown) {
-    const dc = dcRef.current;
-    if (dc?.readyState === "open") {
-      dc.send(JSON.stringify(payload));
-    }
-  }
+  useEffect(() => {
+    // Anything in flight when this component goes away must not be treated as
+    // a live call still worth speaking on.
+    return () => {
+      hangingUp.current = true;
+    };
+  }, []);
+
+  const { send, close } = useRealtimeCall({
+    brief,
+    enabled: Boolean(brief.goal && brief.businessName),
+    audioRef,
+    onOpen: () => {
+      setStatus("On the line");
+      send({
+        type: "response.create",
+        response: { instructions: callOpeningInstructions(brief) },
+      });
+    },
+    onEvent: onRealtime,
+    onError: (message) => {
+      setError(message);
+      setStatus("Failed");
+    },
+  });
 
   /** Inject a message into the realtime conversation and ask for a reply. */
   function sendUserMessage(text: string) {
@@ -256,13 +170,6 @@ export default function LiveCall() {
       },
     });
     send({ type: "response.create" });
-  }
-
-  function pushLine(line: Omit<TranscriptLine, "id" | "at">) {
-    const next: TranscriptLine = { ...line, id: newId(), at: Date.now() };
-    linesRef.current = [...linesRef.current, next];
-    setLines(linesRef.current);
-    return next;
   }
 
   /**
@@ -542,28 +449,24 @@ export default function LiveCall() {
   }
 
   function onRealtime(event: RealtimeEvent) {
-    if (
-      event.type === "response.output_audio_transcript.delta" ||
-      event.type === "response.audio_transcript.delta"
-    ) {
-      agentBuffer.current += event.delta || "";
+    const signal = classifyRealtimeEvent(event);
+
+    if (signal.type === "speaking") {
+      agentBuffer.current += signal.delta;
       spokeThisResponse.current = true;
       setPartial(agentBuffer.current);
       return;
     }
 
-    if (
-      event.type === "response.output_audio_transcript.done" ||
-      event.type === "response.audio_transcript.done"
-    ) {
-      const text = (event.transcript || agentBuffer.current).trim();
+    if (signal.type === "spoke") {
+      const text = (signal.transcript || agentBuffer.current).trim();
       agentBuffer.current = "";
       spokeThisResponse.current = true;
       void afterAgentSpoke(text);
       return;
     }
 
-    if (event.type === "response.done") {
+    if (signal.type === "turnEnded") {
       const text = agentBuffer.current.trim();
       agentBuffer.current = "";
       if (text) void afterAgentSpoke(text);
@@ -588,14 +491,14 @@ export default function LiveCall() {
       return;
     }
 
-    if (event.type === "response.function_call_arguments.done") {
-      if (event.name === "ask_traveler") {
-        raiseQuestion(event.arguments, event.call_id);
+    if (signal.type === "tool") {
+      if (signal.name === "ask_traveler") {
+        raiseQuestion(signal.args, signal.callId);
         return;
       }
       // Never hang up on a traveler who is mid-decision; the business is
       // holding precisely because an answer is still coming.
-      if (event.name === "end_call" && !questionOpen()) {
+      if (signal.name === "end_call" && !questionOpen()) {
         // Nor on a request the business has not answered. Yappr asked to book
         // 20:30, nobody said yes, it hung up, and the summary read "Confirmed"
         // — a booking the traveler would have turned up for.
@@ -666,8 +569,7 @@ export default function LiveCall() {
     hangingUp.current = true;
     setPendingQuestion(null);
     setStatus("Wrapping up…");
-    dcRef.current?.close();
-    pcRef.current?.close();
+    close();
 
     const snapshot = linesRef.current;
     saveJson(TRANSCRIPT_KEY, snapshot);
