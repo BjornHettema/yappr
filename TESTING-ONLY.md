@@ -13,6 +13,8 @@ record to `/api/test-log` containing:
 
 - the brief: goal, extra notes, business type, city, both languages
 - the full dual-language transcript, every turn
+- every mid-call decision the traveller was asked to make: the question, what
+  the business had offered, what they chose, and how many seconds they took
 - the generated summary
 - timestamps and call duration
 - the commit, branch and deployment the session ran on, so results from an

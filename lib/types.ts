@@ -31,6 +31,33 @@ export type CallBrief = {
   extraNotes: string;
 };
 
+/**
+ * A decision Yappr has handed back to the traveler mid-call, because the
+ * business offered something the traveler never asked for. Yappr is silent and
+ * the business is holding while one of these is open.
+ */
+export type PendingQuestion = {
+  id: string;
+  /** The realtime tool call this came from, so it can be acknowledged. */
+  callId: string;
+  /** Short and yes/no-able, in the traveler's language. */
+  question: string;
+  /** What the business said, in their own words. */
+  businessSaid: string;
+  /** The same line in the traveler's language. Empty until it arrives. */
+  businessSaidTranslated: string;
+  options: string[];
+  askedAt: number;
+};
+
+/**
+ * How long the traveler gets. Someone who picked up a phone will not hold in
+ * silence much longer than this, and on timeout Yappr says it will call back
+ * rather than guessing: a lost call can be made again, a booking made on a
+ * substitute nobody agreed to cannot be taken back.
+ */
+export const ANSWER_WINDOW_SECONDS = 45;
+
 export const CALL_BRIEF_KEY = "yappr.callBrief";
 export const TRANSCRIPT_KEY = "yappr.transcript";
 export const SUMMARY_KEY = "yappr.summary";

@@ -46,12 +46,22 @@ function buildInfo() {
   };
 }
 
+/** One mid-call fork the traveler was asked to settle. */
+type Decision = {
+  question?: string;
+  businessSaid?: string;
+  options?: string[];
+  answer?: string;
+  secondsToAnswer?: number;
+};
+
 type SessionPayload = {
   kind?: "session";
   sessionId?: string;
   brief?: CallBrief;
   lines?: TranscriptLine[];
   summary?: Summary;
+  decisions?: Decision[];
   startedAt?: number;
 };
 
@@ -147,6 +157,11 @@ export async function POST(req: Request) {
           translation: line.translation,
         })) ?? [],
       summary: body.summary ?? null,
+      // How often Yappr had to stop and ask rather than decide for itself.
+      // `secondsToAnswer` is the one that says whether testers are actually
+      // at the screen while the call is running.
+      forks: body.decisions?.length ?? 0,
+      decisions: body.decisions ?? [],
     };
 
     await forward(record);

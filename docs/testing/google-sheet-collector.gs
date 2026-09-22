@@ -43,9 +43,11 @@ var HEADERS = [
   'commitMessage',
   'deploymentUrl',
   'raw',
-  // Appended, not inserted: rows written before this existed keep their
-  // alignment and simply leave the last cell empty.
+  // Appended, not inserted: rows written before these existed keep their
+  // alignment and simply leave the last cells empty.
   'sessionId',
+  'forks',
+  'decisions',
 ];
 
 /** Feedback tab columns. Same append-only rule. */
@@ -104,6 +106,26 @@ function doPost(e) {
       })
       .join('\n');
 
+    // Each fork on its own line: what was offered, what the traveller chose,
+    // and how long they took to choose it.
+    var decisions = (data.decisions || [])
+      .map(function (d) {
+        return (
+          'Q: ' +
+          (d.question || '') +
+          '\n  they said: ' +
+          (d.businessSaid || '') +
+          '\n  answer: ' +
+          (d.answer || '') +
+          ' (' +
+          (d.secondsToAnswer === null || d.secondsToAnswer === undefined
+            ? '?'
+            : d.secondsToAnswer) +
+          's)'
+        );
+      })
+      .join('\n');
+
     sheet.appendRow([
       data.loggedAt || new Date().toISOString(),
       data.commit || '',
@@ -130,6 +152,8 @@ function doPost(e) {
       data.deploymentUrl || '',
       JSON.stringify(data),
       data.sessionId || '',
+      data.forks === null || data.forks === undefined ? '' : data.forks,
+      decisions,
     ]);
 
     return ContentService.createTextOutput(

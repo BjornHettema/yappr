@@ -117,7 +117,13 @@ just means that tester skipped the form, which is itself worth noticing.
 `travelerLanguage`, `localLanguage`, `businessType`, `place`, `goal`,
 `extraNotes`, `turns`, `outcome`, `headline`, `agreed`, `unresolved`,
 `nextSteps`, `transcript`, `commitMessage`, `deploymentUrl`, `raw`,
-`sessionId`.
+`sessionId`, `forks`, `decisions`.
+
+`forks` is how many times Yappr stopped and asked the traveller to decide;
+`decisions` spells each one out with what was offered, what they chose and how
+long they took. A high `secondsToAnswer`, or a `(no answer — Yappr ended the
+call)`, means the tester was not at the screen while the call ran — which is
+the assumption the whole mid-call gate rests on, so it is worth watching.
 
 `raw` holds the complete JSON payload, so nothing is lost even if the flattened
 columns change later. Add new columns to the **end** of `HEADERS` only, or

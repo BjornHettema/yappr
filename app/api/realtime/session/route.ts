@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { agentInstructions } from "@/lib/prompts";
-import { callOpenAI, endCallTool, errorResponse, realtimeModel } from "@/lib/openai";
+import {
+  askTravelerTool,
+  callOpenAI,
+  endCallTool,
+  errorResponse,
+  realtimeModel,
+} from "@/lib/openai";
 import type { CallBrief } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -19,7 +25,7 @@ export async function POST(req: Request) {
           model: realtimeModel(),
           instructions: agentInstructions(brief),
           output_modalities: ["audio"],
-          tools: [endCallTool],
+          tools: [askTravelerTool, endCallTool],
           tool_choice: "auto",
           audio: {
             input: {

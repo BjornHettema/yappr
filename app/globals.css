@@ -892,6 +892,104 @@ ul.clean li {
   margin-bottom: 4px;
 }
 
+/* ---------- mid-call decision ----------
+   Docked to the bottom of the viewport, because the traveler may be looking
+   at their phone rather than at this page, and because a question inside the
+   transcript scrolls away. Terracotta edge and the warn dot, not the danger
+   colour: this is a decision, not an error. */
+
+.decision-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  /* Fades the page out behind it instead of cutting it off mid-line. */
+  background: linear-gradient(180deg, transparent, var(--bg) 42%);
+  animation: decision-in 260ms var(--ease-out) both;
+}
+
+/* So the last transcript line is never trapped behind the dock. */
+.page.has-decision {
+  padding-bottom: 340px;
+}
+
+.decision {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px 22px;
+  box-shadow: var(--lift-lg), inset 0 0 0 1.5px var(--accent-halo);
+}
+
+.decision-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.decision-head .kicker {
+  margin: 0;
+}
+
+.decision-clock {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.decision-clock .meta {
+  display: inline;
+  font-weight: 400;
+}
+
+.decision-clock.low {
+  color: var(--danger);
+}
+
+.decision-question {
+  font-family: var(--font-display, "Fraunces"), Georgia, serif;
+  font-size: clamp(20px, 2.4vw, 26px);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 10px 0 0;
+}
+
+/* What the business actually said. Kept visually as a quotation, because it
+   is evidence rather than Yappr's own words. */
+.decision-said {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--tint-teal);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.decision-said cite {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@keyframes decision-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* ---------- tester feedback (TEMPORARY - USER TESTING PHASE ONLY) ----------
    Remove this whole block with the logging feature. See TESTING-ONLY.md.
    Deliberately quieter than the summary it sits under: the summary is what the
@@ -1038,6 +1136,19 @@ ul.clean li {
   .actions .btn {
     flex: 1 1 auto;
   }
+
+  .decision {
+    padding: 16px 18px 18px;
+  }
+
+  /* Two answers side by side, "Something else" on its own line under them. */
+  .decision-actions .btn {
+    flex: 1 1 40%;
+  }
+
+  .page.has-decision {
+    padding-bottom: 380px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1048,7 +1159,8 @@ ul.clean li {
   .wave span,
   .fade-in,
   .line,
-  .error {
+  .error,
+  .decision-dock {
     animation: none;
   }
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ANSWER_WINDOW_SECONDS,
   CALL_BRIEF_KEY,
   SESSION_ID_KEY,
   SUMMARY_KEY,
@@ -11,11 +12,17 @@ import {
   loadJson,
   saveJson,
   type CallBrief,
+  type PendingQuestion,
   type TranscriptLine,
 } from "@/lib/types";
 import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
-import { callOpeningInstructions } from "@/lib/prompts";
+import DecisionPrompt from "@/app/components/DecisionPrompt";
+import {
+  callOpeningInstructions,
+  holdExpiredInstructions,
+  travelerAnswer,
+} from "@/lib/prompts";
 import { testLoggingActive } from "@/lib/testLog";
 
 type RealtimeEvent = {
@@ -24,6 +31,16 @@ type RealtimeEvent = {
   transcript?: string;
   name?: string;
   arguments?: string;
+  call_id?: string;
+};
+
+/** One fork the traveler was asked to settle. Kept for the summary and the log. */
+type Decision = {
+  question: string;
+  businessSaid: string;
+  options: string[];
+  answer: string;
+  secondsToAnswer: number;
 };
 
 function silentTrack() {
@@ -50,8 +67,14 @@ export default function LiveCall() {
   const [coach, setCoach] = useState("");
   const [lines, setLines] = useState<TranscriptLine[]>([]);
   const [partial, setPartial] = useState("");
+  const [pending, setPending] = useState<PendingQuestion | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(ANSWER_WINDOW_SECONDS);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const coachRef = useRef<HTMLTextAreaElement>(null);
+  /** Mirrors `pending` for the async handlers, which can't read state. */
+  const pendingRef = useRef<PendingQuestion | null>(null);
+  const decisions = useRef<Decision[]>([]);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const linesRef = useRef<TranscriptLine[]>([]);
@@ -70,6 +93,24 @@ export default function LiveCall() {
   useEffect(() => {
     if (audioRef.current) audioRef.current.muted = !listenLive;
   }, [listenLive]);
+
+  // Counts the hold down, and ends it when it runs out. Keyed on the question
+  // id so answering one and being asked another restarts the clock cleanly.
+  useEffect(() => {
+    if (!pending) return;
+
+    const deadline = pending.askedAt + ANSWER_WINDOW_SECONDS * 1000;
+    function tick() {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSecondsLeft(left);
+      if (left <= 0) expireQuestion();
+    }
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending?.id]);
 
   useEffect(() => {
     if (!brief.goal || !brief.businessName) {
@@ -223,6 +264,132 @@ export default function LiveCall() {
     });
   }
 
+  /** Keeps the ref and the rendered state in step; always use this, not setPending. */
+  function setPendingQuestion(next: PendingQuestion | null) {
+    pendingRef.current = next;
+    setPending(next);
+  }
+
+  /**
+   * Yappr hit something the traveler never asked for and called ask_traveler.
+   * The tool call is acknowledged but NOT followed by a response.create — the
+   * whole point is that Yappr goes quiet until the traveler decides.
+   */
+  function raiseQuestion(rawArgs: string | undefined, callId: string | undefined) {
+    // One open question at a time. A second call before the first is answered
+    // would silently replace the thing the traveler is looking at.
+    if (pendingRef.current || hangingUp.current) return;
+
+    let parsed: { question?: string; businessSaid?: string; options?: unknown };
+    try {
+      parsed = JSON.parse(rawArgs || "{}");
+    } catch {
+      return;
+    }
+
+    const question = (parsed.question || "").trim();
+    if (!question) return;
+
+    const options = (Array.isArray(parsed.options) ? parsed.options : [])
+      .map((option) => String(option).trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    const next: PendingQuestion = {
+      id: newId(),
+      callId: callId || "",
+      question,
+      businessSaid: (parsed.businessSaid || "").trim(),
+      businessSaidTranslated: "",
+      options: options.length ? options : ["Yes", "No"],
+      askedAt: Date.now(),
+    };
+    setPendingQuestion(next);
+
+    if (callId) {
+      send({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: JSON.stringify({
+            status: "waiting",
+            note: "The traveler is deciding. Say nothing until a [TRAVELER ANSWER] message arrives.",
+          }),
+        },
+      });
+    }
+
+    void translateQuestionQuote(next);
+  }
+
+  /**
+   * Fills in the traveler-language version of what the business said. Separate
+   * from raiseQuestion so the question itself renders immediately rather than
+   * waiting on a translation round-trip while someone holds the line.
+   */
+  async function translateQuestionQuote(question: PendingQuestion) {
+    if (!question.businessSaid) return;
+    const translated = await translate(
+      question.businessSaid,
+      brief.localLanguage,
+      brief.travelerLanguage,
+    );
+    // It may have been answered or expired while that was in flight.
+    if (pendingRef.current?.id !== question.id) return;
+    setPendingQuestion({ ...question, businessSaidTranslated: translated });
+  }
+
+  function recordDecision(question: PendingQuestion, answer: string) {
+    decisions.current = [
+      ...decisions.current,
+      {
+        question: question.question,
+        businessSaid: question.businessSaid,
+        options: question.options,
+        answer,
+        secondsToAnswer: Math.round((Date.now() - question.askedAt) / 1000),
+      },
+    ];
+  }
+
+  /** The traveler decided. Their answer is final; Yappr acts on it, unarguably. */
+  function answerQuestion(answer: string) {
+    const current = pendingRef.current;
+    const text = answer.trim();
+    if (!current || !text) return;
+
+    setPendingQuestion(null);
+    recordDecision(current, text);
+    pushLine({
+      speaker: "you",
+      original: text,
+      translation: `Your decision — Yappr asked: ${current.question}`,
+      language: brief.travelerLanguage,
+    });
+    sendUserMessage(travelerAnswer(current.question, text));
+  }
+
+  /**
+   * Nobody answered. Yappr apologises, says it will call back and hangs up,
+   * rather than taking the offer — which is the whole reason this gate exists.
+   */
+  function expireQuestion() {
+    const current = pendingRef.current;
+    if (!current) return;
+
+    setPendingQuestion(null);
+    recordDecision(current, "(no answer — Yappr ended the call)");
+    setStatus("No answer — wrapping up");
+    pushLine({
+      speaker: "you",
+      original: "No answer in time",
+      translation: `Yappr asked: ${current.question} — it will say it can call back.`,
+      language: brief.travelerLanguage,
+    });
+    sendUserMessage(holdExpiredInstructions(brief));
+  }
+
   async function afterAgentSpoke(original: string) {
     if (hangingUp.current || awaitingBusiness.current || !original.trim()) return;
     awaitingBusiness.current = true;
@@ -231,6 +398,11 @@ export default function LiveCall() {
     await speak("yappr", original);
 
     try {
+      // A decision is with the traveler, so the business is holding and
+      // nobody speaks until the answer lands. Checked here as well as below
+      // because the tool call and the spoken hold line arrive independently.
+      if (pendingRef.current) return;
+
       const res = await fetch("/api/simulate-business", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -244,7 +416,9 @@ export default function LiveCall() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || hangingUp.current) return;
+      // Same check again: ask_traveler can land while this request is open,
+      // and a business line arriving mid-hold would be out of order.
+      if (!res.ok || hangingUp.current || pendingRef.current) return;
 
       const businessOriginal = data.reply as string;
       await speak("business", businessOriginal);
@@ -281,17 +455,35 @@ export default function LiveCall() {
       return;
     }
 
-    if (
-      event.type === "response.function_call_arguments.done" &&
-      event.name === "end_call"
-    ) {
-      void hangUp();
+    if (event.type === "response.function_call_arguments.done") {
+      if (event.name === "ask_traveler") {
+        raiseQuestion(event.arguments, event.call_id);
+        return;
+      }
+      // Never hang up on a traveler who is mid-decision; the business is
+      // holding precisely because an answer is still coming.
+      if (event.name === "end_call" && !pendingRef.current) {
+        void hangUp();
+      }
     }
   }
 
+  /**
+   * The coach box doubles as the answer box: while a question is open, what
+   * the traveler types IS their decision. "No, but ask about Saturday" is a
+   * real answer that two buttons cannot express, and routing it through the
+   * coaching channel instead would leave Yappr still waiting.
+   */
   function sendCoach() {
     const note = coach.trim();
     if (!note) return;
+    setCoach("");
+
+    if (pendingRef.current) {
+      answerQuestion(note);
+      return;
+    }
+
     pushLine({
       speaker: "you",
       original: note,
@@ -299,7 +491,11 @@ export default function LiveCall() {
       language: brief.travelerLanguage,
     });
     sendUserMessage(`[TRAVELER COACHING] ${note}`);
-    setCoach("");
+  }
+
+  function focusCoach() {
+    coachRef.current?.focus();
+    coachRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
   /**
@@ -322,6 +518,10 @@ export default function LiveCall() {
         lines: linesRef.current,
         summary,
         sessionId: sessionId.current,
+        // How often Yappr had to stop and ask, what was chosen, and how long
+        // the traveler took — the last of which is really a test of whether
+        // testers are present during the call at all.
+        decisions: decisions.current,
         startedAt: startedAt.current,
       }),
     }).catch(() => {
@@ -332,6 +532,7 @@ export default function LiveCall() {
   async function hangUp() {
     if (hangingUp.current) return;
     hangingUp.current = true;
+    setPendingQuestion(null);
     setStatus("Wrapping up…");
     dcRef.current?.close();
     pcRef.current?.close();
@@ -363,7 +564,7 @@ export default function LiveCall() {
   }
 
   return (
-    <main className="page">
+    <main className={`page${pending ? " has-decision" : ""}`}>
       <audio ref={audioRef} autoPlay playsInline />
       <div className="live-layout">
         <aside className="card panel">
@@ -390,16 +591,25 @@ export default function LiveCall() {
             </button>
           </div>
           <label className="field" style={{ marginTop: 16 }}>
-            Coach Yappr mid-call
+            {pending ? "Answer in your own words" : "Coach Yappr mid-call"}
             <textarea
+              ref={coachRef}
               value={coach}
               onChange={(e) => setCoach(e.target.value)}
-              placeholder="Ask for outdoor seating instead."
+              placeholder={
+                pending
+                  ? "No, but ask if Saturday is free."
+                  : "Ask for outdoor seating instead."
+              }
             />
           </label>
           <div className="actions">
-            <button className="btn btn-ghost" type="button" onClick={sendCoach}>
-              Send note
+            <button
+              className={`btn ${pending ? "btn-primary" : "btn-ghost"}`}
+              type="button"
+              onClick={sendCoach}
+            >
+              {pending ? "Send answer" : "Send note"}
             </button>
             <button className="btn btn-danger" type="button" onClick={() => void hangUp()}>
               Hang up
@@ -430,6 +640,15 @@ export default function LiveCall() {
           </div>
         </section>
       </div>
+
+      {pending ? (
+        <DecisionPrompt
+          question={pending}
+          secondsLeft={secondsLeft}
+          onAnswer={answerQuestion}
+          onSomethingElse={focusCoach}
+        />
+      ) : null}
     </main>
   );
 }

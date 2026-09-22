@@ -73,6 +73,43 @@ export function errorResponse(error: unknown, fallback: string) {
   return NextResponse.json({ error: message }, { status });
 }
 
+/**
+ * The decision gate. Yappr has no authority to accept anything the traveler
+ * did not write, so when the business offers something different — a middle
+ * seat instead of front row, 20:00 instead of 19:00 — it must stop and ask
+ * rather than choose. Making that a tool rather than a prompt rule means the
+ * model has to declare the fork instead of silently resolving it; a prompt
+ * rule alone is what let it order a crab dish for a shellfish allergy.
+ */
+export const askTravelerTool = {
+  type: "function",
+  name: "ask_traveler",
+  description:
+    "Ask the traveler to decide, mid-call, when the business offers anything different from what the traveler wrote. Call this instead of accepting, declining or choosing yourself. Say a short holding line out loud first so the line is not silent.",
+  parameters: {
+    type: "object",
+    properties: {
+      question: {
+        type: "string",
+        description:
+          "The decision, in the traveler's language, as short as it can be and answerable with yes or no. One sentence, no preamble.",
+      },
+      businessSaid: {
+        type: "string",
+        description:
+          "What the business actually said, in their own words, in the local language. Do not paraphrase or soften it.",
+      },
+      options: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Two or three very short answer labels in the traveler's language, positive one first. Usually the equivalent of Yes and No.",
+      },
+    },
+    required: ["question", "businessSaid", "options"],
+  },
+};
+
 export const endCallTool = {
   type: "function",
   name: "end_call",
