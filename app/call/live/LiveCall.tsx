@@ -19,6 +19,7 @@ import TranscriptLineView from "@/app/components/TranscriptLineView";
 import CallRequest from "@/app/components/CallRequest";
 import DecisionPrompt from "@/app/components/DecisionPrompt";
 import {
+  answerNotRelayed,
   callOpeningInstructions,
   holdExpiredInstructions,
   holdInstructions,
@@ -98,6 +99,18 @@ export default function LiveCall() {
   const holdQueued = useRef<string | null>(null);
   /** Whether the response now in flight has produced any speech. */
   const spokeThisResponse = useRef(false);
+  /** The next line Yappr speaks is the hold line we asked for, not a real turn. */
+  const expectHoldLine = useRef(false);
+  /**
+   * An answer has gone to Yappr and it has not said anything to the business
+   * since. Raising a second question in that state means the traveler is being
+   * asked something only the business can answer.
+   */
+  const answerNotSpoken = useRef(false);
+  /** One correction per answer, so a stubborn model can't be argued with forever. */
+  const correctionSent = useRef(false);
+  /** Correction instructions waiting for the current response to finish. */
+  const correctionQueued = useRef<string | null>(null);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -324,6 +337,18 @@ export default function LiveCall() {
     const question = (parsed.question || "").trim();
     if (!question) return;
 
+    // Nothing has been said on the line since the traveler last answered, so
+    // whatever is being asked now cannot have come from the business. Send it
+    // back once rather than showing a card that asks the traveler to speak for
+    // the shop.
+    if (answerNotSpoken.current && !correctionSent.current) {
+      correctionSent.current = true;
+      // Queued for the same reason the hold line is: the response carrying
+      // this tool call is still open.
+      correctionQueued.current = answerNotRelayed(brief);
+      return;
+    }
+
     const options = (Array.isArray(parsed.options) ? parsed.options : [])
       .map((option) => String(option).trim())
       .filter(Boolean)
@@ -335,12 +360,18 @@ export default function LiveCall() {
       // Unknown or missing falls back to "choice", which renders every option
       // as an equal peer. Failing that way round is harmless; falling back to
       // "confirm" would put false emphasis on whichever option came first.
-      kind: parsed.kind === "confirm" ? "confirm" : "choice",
+      kind:
+        parsed.kind === "confirm" || parsed.kind === "info"
+          ? parsed.kind
+          : "choice",
       question,
       questionRaw: question,
       businessSaid: (parsed.businessSaid || "").trim(),
       businessSaidTranslated: "",
-      options: options.length ? options : ["Yes", "No"],
+      // "info" is answered by typing, so no options is the right answer there;
+      // anywhere else, a card with nothing to press would be a dead end.
+      options:
+        options.length || parsed.kind === "info" ? options : ["Yes", "No"],
       // Timed from now, not from when the card appears: the business starts
       // waiting the moment Yappr says "one moment", and 30s is their ceiling.
       askedAt: Date.now(),
@@ -455,7 +486,11 @@ export default function LiveCall() {
       translation: `Your decision — Yappr asked: ${current.question}`,
       language: brief.travelerLanguage,
     });
-    sendUserMessage(travelerAnswer(current.question, text));
+    // Until Yappr says this to the business, it has no new information and no
+    // business asking the traveler anything else.
+    answerNotSpoken.current = true;
+    correctionSent.current = false;
+    sendUserMessage(travelerAnswer(current.question, text, current.kind));
   }
 
   /**
@@ -482,6 +517,15 @@ export default function LiveCall() {
     if (hangingUp.current || awaitingBusiness.current || !original.trim()) return;
     awaitingBusiness.current = true;
     setPartial("");
+
+    // A hold line is the client asking for "one moment" — it carries none of
+    // the traveler's answer, so it doesn't count as having relayed it.
+    // Anything else Yappr says does.
+    if (expectHoldLine.current) {
+      expectHoldLine.current = false;
+    } else {
+      answerNotSpoken.current = false;
+    }
 
     await speak("yappr", original);
 
@@ -547,8 +591,16 @@ export default function LiveCall() {
       // model already spoke in this turn — then it has said something to the
       // business itself and a second "one moment" on top would be noise.
       const hold = holdQueued.current;
+      const correction = correctionQueued.current;
       holdQueued.current = null;
-      if (hold && !spokeThisResponse.current && !hangingUp.current) {
+      correctionQueued.current = null;
+
+      if (correction && !hangingUp.current) {
+        // Always sent, even if the model spoke in this turn: what it said was
+        // not the traveler's answer, which is the whole complaint.
+        send({ type: "response.create", response: { instructions: correction } });
+      } else if (hold && !spokeThisResponse.current && !hangingUp.current) {
+        expectHoldLine.current = true;
         send({ type: "response.create", response: { instructions: hold } });
       }
       spokeThisResponse.current = false;

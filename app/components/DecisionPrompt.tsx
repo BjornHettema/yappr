@@ -30,8 +30,42 @@ export default function DecisionPrompt({
   // box in the other column. Answering in your own words is an answer to this
   // question, so it belongs on this card — and with a business holding the
   // line, a detour across the screen is time nobody has.
-  const [typing, setTyping] = useState(false);
+  // An "info" question — a name, a phone number, a spelling — is answered by
+  // typing, so the field is there from the start. A button reading "here is my
+  // phone number" that contains no phone number leaves Yappr with nothing to
+  // say, and it went and asked the shop for the traveler's own number instead.
+  const needsTyping = question.kind === "info";
+  const [typing, setTyping] = useState(needsTyping);
   const [text, setText] = useState("");
+
+  const answerForm = () => (
+    <form
+      className="decision-answer"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (text.trim()) onAnswer(text);
+      }}
+    >
+      <input
+        // Deliberate: the field is either the whole point of the card, or it
+        // appeared because the traveler asked for it. Someone is holding.
+        autoFocus
+        type="text"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        placeholder={
+          needsTyping
+            ? "Type it exactly as they should hear it."
+            : "No, but ask if Saturday is free."
+        }
+        aria-label="Answer in your own words"
+        enterKeyHint="send"
+      />
+      <button className="btn btn-primary" type="submit" disabled={!text.trim()}>
+        Send
+      </button>
+    </form>
+  );
 
   // Runs low in the last third rather than being urgent from the start: a red
   // countdown for the whole window just reads as pressure.
@@ -66,7 +100,12 @@ export default function DecisionPrompt({
           </blockquote>
         ) : null}
 
-        <div className="decision-actions">
+        {/* For an "info" question the field is the answer and any option is a
+            way out of it, so the field leads and the buttons sit under it. */}
+        {needsTyping ? answerForm() : null}
+
+        {question.options.length || !needsTyping ? (
+        <div className={`decision-actions${needsTyping ? " secondary" : ""}`}>
           {question.options.map((option, index) => (
             <button
               key={option}
@@ -85,7 +124,7 @@ export default function DecisionPrompt({
           ))}
           {/* The options stay put while the field is open: changing your mind
               back to a one-tap answer shouldn't cost a step. */}
-          {typing ? null : (
+          {typing || needsTyping ? null : (
             <button
               type="button"
               className="btn btn-ghost"
@@ -95,31 +134,9 @@ export default function DecisionPrompt({
             </button>
           )}
         </div>
-
-        {typing ? (
-          <form
-            className="decision-answer"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (text.trim()) onAnswer(text);
-            }}
-          >
-            <input
-              // Deliberate: the field appears because the traveler asked for
-              // it, and someone is holding the line.
-              autoFocus
-              type="text"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="No, but ask if Saturday is free."
-              aria-label="Answer in your own words"
-              enterKeyHint="send"
-            />
-            <button className="btn btn-primary" type="submit" disabled={!text.trim()}>
-              Send
-            </button>
-          </form>
         ) : null}
+
+        {typing && !needsTyping ? answerForm() : null}
       </section>
     </div>
   );

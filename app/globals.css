@@ -1099,7 +1099,19 @@ ul.clean.ticked li::before {
 .decision-answer {
   display: flex;
   gap: 10px;
+  margin-top: 16px;
+}
+
+/* Under the field rather than above it: on an "info" question these are ways
+   out of answering, not the answer. */
+.decision-actions.secondary {
   margin-top: 12px;
+}
+
+.decision-actions.secondary .btn {
+  font-size: 15px;
+  min-height: 44px;
+  padding: 11px 18px;
 }
 
 .decision-answer input {

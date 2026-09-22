@@ -44,9 +44,11 @@ export type PendingQuestion = {
    * "confirm" is one offer, answered yes or no, so the accepting option can
    * lead. "choice" is several alternatives the business named, which are peers
    * — styling one of them as the recommendation would be Yappr nudging a
-   * decision it is not allowed to make.
+   * decision it is not allowed to make. "info" is the business needing
+   * something only the traveler has: a name, a number, a spelling. No button
+   * can carry a phone number, so that one opens a field instead.
    */
-  kind: "confirm" | "choice";
+  kind: "confirm" | "choice" | "info";
   /** Short and answerable, in the traveler's language. */
   question: string;
   /**

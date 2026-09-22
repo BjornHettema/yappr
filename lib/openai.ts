@@ -85,15 +85,15 @@ export const askTravelerTool = {
   type: "function",
   name: "ask_traveler",
   description:
-    "Ask the traveler to decide, mid-call, when the business offers anything different from what the traveler wrote. Call this instead of accepting, declining or choosing yourself. Say a short holding line out loud first so the line is not silent.",
+    "Ask the traveler to decide, mid-call, when the business offers anything different from what the traveler wrote, or needs something only the traveler can supply. Call this instead of accepting, declining or choosing yourself. ONLY ask things the traveler themselves can answer — what they want, and facts about them. They are sitting somewhere else with no idea what this business has free, what it charges or what it allows; asking them that is asking the wrong person, and it reads to them as if you had mistaken them for the shop. Anything about the business is asked OUT LOUD, on the phone, to the business.",
   parameters: {
     type: "object",
     properties: {
       kind: {
         type: "string",
-        enum: ["confirm", "choice"],
+        enum: ["confirm", "choice", "info"],
         description:
-          "'confirm' when there is one offer on the table and the answer is yes or no. 'choice' when the business named more than one alternative and the traveler has to pick. Get this right: 'confirm' puts the weight of a recommendation behind the first option, which is wrong when they are simply alternatives.",
+          "'confirm' when there is one offer on the table and the answer is yes or no. 'choice' when the business named more than one alternative and the traveler has to pick. 'info' when the business needs something only the traveler can supply — a name, a phone number, a spelling, a date, how many people. Get this right: 'confirm' puts the weight of a recommendation behind the first option, which is wrong when they are merely alternatives, and a button cannot carry a phone number, so a question answered with information must never be 'confirm' or 'choice'.",
       },
       question: {
         type: "string",
@@ -109,7 +109,7 @@ export const askTravelerTool = {
         type: "array",
         items: { type: "string" },
         description:
-          "Very short answer labels, IN THE TRAVELER'S LANGUAGE, at most three. For 'confirm', exactly two, the accepting one first. For 'choice', one for EVERY alternative the business named — if they offered two times, both times appear here. Never leave one out and never pick between them yourself; choosing which alternative to put to the traveler is still choosing for them.",
+          "Very short answer labels, IN THE TRAVELER'S LANGUAGE, at most three. For 'confirm', exactly two, the accepting one first. For 'choice', one for EVERY alternative the business named — if they offered two times, both times appear here. Never leave one out and never pick between them yourself; choosing which alternative to put to the traveler is still choosing for them. For 'info', leave this empty, or give a single way of declining such as the equivalent of 'I'd rather not say' — the traveler types the answer, so a button claiming to hand over a name or number without containing one is worse than no button.",
       },
     },
     required: ["kind", "question", "businessSaid", "options"],
