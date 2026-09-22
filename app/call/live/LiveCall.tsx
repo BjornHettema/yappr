@@ -21,6 +21,7 @@ import DecisionPrompt from "@/app/components/DecisionPrompt";
 import {
   answerNotRelayed,
   callOpeningInstructions,
+  confirmationMissing,
   holdExpiredInstructions,
   holdInstructions,
   travelerAnswer,
@@ -111,6 +112,14 @@ export default function LiveCall() {
   const correctionSent = useRef(false);
   /** Correction instructions waiting for the current response to finish. */
   const correctionQueued = useRef<string | null>(null);
+  /**
+   * The business has said something since the traveler's last answer. Starts
+   * true so calls that never fork are unaffected. While it is false, Yappr has
+   * made a request nobody has answered yet — and hanging up there produces a
+   * booking the traveler believes in and the business never made.
+   */
+  const businessSpokeSinceAnswer = useRef(true);
+  const hangUpBlockedOnce = useRef(false);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -490,6 +499,8 @@ export default function LiveCall() {
     // business asking the traveler anything else.
     answerNotSpoken.current = true;
     correctionSent.current = false;
+    businessSpokeSinceAnswer.current = false;
+    hangUpBlockedOnce.current = false;
     sendUserMessage(travelerAnswer(current.question, text, current.kind));
   }
 
@@ -553,6 +564,7 @@ export default function LiveCall() {
       if (!res.ok || hangingUp.current || questionOpen()) return;
 
       const businessOriginal = data.reply as string;
+      businessSpokeSinceAnswer.current = true;
       await speak("business", businessOriginal);
       sendUserMessage(`[BUSINESS] ${businessOriginal}`);
     } finally {
@@ -615,6 +627,14 @@ export default function LiveCall() {
       // Never hang up on a traveler who is mid-decision; the business is
       // holding precisely because an answer is still coming.
       if (event.name === "end_call" && !questionOpen()) {
+        // Nor on a request the business has not answered. Yappr asked to book
+        // 20:30, nobody said yes, it hung up, and the summary read "Confirmed"
+        // — a booking the traveler would have turned up for.
+        if (!businessSpokeSinceAnswer.current && !hangUpBlockedOnce.current) {
+          hangUpBlockedOnce.current = true;
+          correctionQueued.current = confirmationMissing(brief);
+          return;
+        }
         void hangUp();
       }
     }

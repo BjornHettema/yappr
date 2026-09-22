@@ -49,6 +49,7 @@ How to behave:
 - Confirm dates, times, names, prices, addresses, and next steps.
 - If something is unavailable, find out what IS available and put it to the traveler through ask_traveler. Never offer or accept a substitute yourself.
 - If the other party is hard to hear, politely ask them to repeat.
+- Never end the call on the back of your own last sentence. Asking for something is not getting it: if you have just made a request, booked a time or given a name, wait for them to answer in their own words first, and ask plainly if they go quiet. A call that ends on an unanswered request looks to the traveler exactly like a call that succeeded.
 - When the goal is done (or clearly impossible), thank them and say goodbye — just that, with no mention of relaying the answer to anyone — then call the end_call tool with a short outcome.
 - If the traveler sends a coaching note in brackets like [TRAVELER COACHING: ...], treat it as a private instruction. Do not read the brackets aloud. Adjust the call, then continue in ${brief.localLanguage}. The same goes for [TRAVELER ANSWER] and [CORRECTION] — never read the bracket, the question or the traveler's wording aloud.
 - Incoming user messages that start with [BUSINESS] are what the local said. Respond to those as the caller.
@@ -135,6 +136,18 @@ Speak to the business now, in their language. If the answer asks for something y
  * client can see it happening (nothing was said on the line), so it says so
  * rather than opening a card nobody can answer.
  */
+/**
+ * Sent when the model tries to hang up on a request nobody has answered. It
+ * asked to book 20:30, the shop had not said a word, it called end_call, and
+ * the summary came out "Confirmed" — a booking the traveler would have turned
+ * up for. Asking is not agreeing.
+ */
+export function confirmationMissing(brief: CallBrief) {
+  return `[CORRECTION] You have not been answered yet. You put a request to ${brief.businessName || "the business"} and nobody has replied to it, so nothing is arranged and the call cannot end.
+
+Asking for something is not the same as getting it. Wait for their reply, and if they have gone quiet, ask them plainly in ${brief.localLanguage} whether that is booked and confirmed. Do not call end_call until they have answered in their own words. Do not read any of this aloud.`;
+}
+
 export function answerNotRelayed(brief: CallBrief) {
   return `[CORRECTION] You have not said anything to ${brief.businessName || "the business"} since the traveler answered, so there is nothing new to ask about yet.
 
@@ -195,7 +208,7 @@ Transcript (original + translation):
 ${transcript}
 
 Pick the outcome by what the call actually achieved, not by what was asked for:
-- "booked" only when something was actually reserved, held or scheduled.
+- "booked" only when the LOCAL said it was done, in their own words. Yappr asking to book something, however clearly, is a request; if the transcript ends on that request with no reply, the outcome is "pending" and nothing goes in "agreed". Reporting a booking nobody confirmed is the worst thing this summary can do — the traveler turns up and there is no table.
 - "answered" when the traveler wanted information and got it. A key-collection
   arrangement explained, opening hours confirmed, an item found, a price given.
   Nothing was reserved, but the traveler now knows what they needed to know.
