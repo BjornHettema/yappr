@@ -298,6 +298,36 @@ card readable, so nobody should later remove it as redundant), and a `confirm`
 whose `businessSaid` names more than one alternative is the model collapsing a
 real choice into a yes/no — the same class of bug as accepting a substitute.
 
+### 13. Answering in your own words happens on the card (commit `72e9a8a`)
+
+"Something else" used to send the traveler to the coach box in the other
+column — a detour across the screen at the one moment there is no time for
+one, because a business is holding the line. It now opens a single-line field
+on the card itself, autofocused, Enter to send. The option buttons stay put, so
+changing your mind back to a one-tap answer costs nothing.
+
+Consequence worth knowing: **the coach box is now disabled while a question is
+open**, and went back to being only a coach box. Two live text boxes both
+claiming to talk to Yappr, one of which would leave the question unanswered,
+is not a choice to hand someone mid-call. `sendCoach` no-ops while
+`questionOpen()`.
+
+An `<input>` rather than a `<textarea>` — the answers are short and a tall box
+in a docked card competes with the keyboard for room. Same reason the viewport
+now sets `interactiveWidget: "resizes-content"`, so the dock rides above the
+on-screen keyboard rather than under it. `DecisionPrompt` is keyed on the
+question id so a second question never inherits a half-typed answer.
+
+**Open tension, deliberately not resolved:** the 30-second clock keeps running
+while someone types. Typing takes 10–15s of it, so a ditherer can lose their
+answer. Extending the window would break Jeroen's ceiling on how long a
+business is left holding, which is the more important constraint. Revisit only
+if the logged `secondsToAnswer` shows people routinely running out while typing.
+
+Verified live: declined 17:00 by typing "No, but ask if 18:00 is free" — Yappr
+declined, asked about 18:00, was offered 19:00, and came back with a fresh hold
+line and a clean card.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
