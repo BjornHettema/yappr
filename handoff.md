@@ -463,6 +463,15 @@ took the whole push with it, which is now in the standing blockers.
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
+- **The test-log archive can die silently, and has.** A dead or archived Apps
+  Script deployment answers with an HTML "page not found" rather than an
+  error, so nothing throws and every session goes nowhere. If a future session
+  is asked why the Sheet is empty, check the collector *first*: open the Web
+  app URL and read the landing text (`POST sessions and feedback here` = the
+  current script), and look at the `archive` field `/api/test-log` now returns.
+  The usual cause is "New deployment" instead of a new *version* of the
+  existing one, which mints a different URL while Vercel keeps pointing at the
+  old. Full diagnostic in `docs/testing/README.md`.
 - **A fine-grained PAT without `workflow` scope cannot push changes to
   `.github/workflows/`.** GitHub rejects the whole push, not just that file, so
   commit workflow edits separately or they will block everything behind them.
