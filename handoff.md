@@ -417,7 +417,46 @@ Vitest, `npm test`. No behaviour change intended; `LiveCall.tsx` went 847 →
 789 lines and `DecisionPrompt` now shares the tested `isLeadingOption` instead
 of repeating the rule.
 
-`npm test` runs in CI between `typecheck` and `build`. That step needed a
+Two of the three hook splits were worth making. **`useRealtimeCall`** owns the
+browser→OpenAI leg (events out, `send` in) — the part that changes shape at
+telephony time, so that migration touches it and the business-turn handler
+rather than the decision gate. **`useTranscript`** owns the line list, the ref
+the async handlers read, and the sessionStorage write.
+**`classifyRealtimeEvent`** turns the event-name matching into a tested pure
+function, which matters because the audio-transcript events ship under two
+spellings and handling only one empties the transcript *silently*.
+
+**The decision gate was deliberately not extracted.** Its state is shared with
+the event routing — the same protocol state decides whether a question may be
+raised and whether the call may end — so a hook would mean an interface about
+as wide as the code it hides, around the part that has already produced four
+bugs. Tests were the right answer there. Revisit only if that state stops
+being shared.
+
+Fixed while moving it: the connection hook would have dialled with no brief,
+minting a session with an empty request and racing a 400 against the redirect
+back to the form. Hence `enabled`.
+
+`LiveCall.tsx` 847 → 690 lines. **`npm test` runs in CI** between `typecheck`
+and `build`.
+
+**Graphify's god-node count is now misleading for this file** and it's worth
+knowing why: `LiveCall()` went 36 → 47 edges *because of* the refactor.
+Extracting logic into modules adds imports, and imports are edges, so pulling
+dangerous code out to tested modules makes the consumer's fan-out go up. Read
+the number as "how much does this file touch", not "how risky is it". The
+useful signals here were the line count and the test count.
+
+**One regression found by verifying live, not by the tests.** After the
+hang-up guard fired, Yappr told the restaurant, out loud in Thai: *"I have
+requested the table for 20:00 and will wait for the restaurant to confirm — if
+there's anything else I'll let you know."* Reporting to the traveler over the
+phone, which is the oldest bug in this codebase arriving through a door built
+yesterday: a correction that says "wait for their confirmation" invites exactly
+that sentence. All three corrective instructions now carry a shared
+`NO_NARRATION` clause. The lesson generalises — **a targeted instruction sent
+mid-call outweighs a general one set at the start**, so any new correction has
+to restate the standing rules it could cut across. That step needed a
 second push with a `workflow`-scoped PAT — the first attempt was rejected and
 took the whole push with it, which is now in the standing blockers.
 
