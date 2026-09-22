@@ -14,19 +14,25 @@
  * also deliberately nowhere near "Hang up", which lives in the other column.
  */
 
+import { useState } from "react";
 import type { PendingQuestion } from "@/lib/types";
 
 export default function DecisionPrompt({
   question,
   secondsLeft,
   onAnswer,
-  onSomethingElse,
 }: {
   question: PendingQuestion;
   secondsLeft: number;
   onAnswer: (answer: string) => void;
-  onSomethingElse: () => void;
 }) {
+  // "Something else" opens a field here rather than sending someone off to a
+  // box in the other column. Answering in your own words is an answer to this
+  // question, so it belongs on this card — and with a business holding the
+  // line, a detour across the screen is time nobody has.
+  const [typing, setTyping] = useState(false);
+  const [text, setText] = useState("");
+
   // Runs low in the last third rather than being urgent from the start: a red
   // countdown for the whole window just reads as pressure.
   const low = secondsLeft <= 10;
@@ -77,10 +83,43 @@ export default function DecisionPrompt({
               {option}
             </button>
           ))}
-          <button type="button" className="btn btn-ghost" onClick={onSomethingElse}>
-            Something else…
-          </button>
+          {/* The options stay put while the field is open: changing your mind
+              back to a one-tap answer shouldn't cost a step. */}
+          {typing ? null : (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setTyping(true)}
+            >
+              Something else…
+            </button>
+          )}
         </div>
+
+        {typing ? (
+          <form
+            className="decision-answer"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (text.trim()) onAnswer(text);
+            }}
+          >
+            <input
+              // Deliberate: the field appears because the traveler asked for
+              // it, and someone is holding the line.
+              autoFocus
+              type="text"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="No, but ask if Saturday is free."
+              aria-label="Answer in your own words"
+              enterKeyHint="send"
+            />
+            <button className="btn btn-primary" type="submit" disabled={!text.trim()}>
+              Send
+            </button>
+          </form>
+        ) : null}
       </section>
     </div>
   );

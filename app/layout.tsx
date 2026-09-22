@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Fraunces, Outfit } from "next/font/google";
 import ThemeToggle from "@/app/components/ThemeToggle";
@@ -39,6 +39,18 @@ export const metadata: Metadata = {
   title: "Yappr: call like a local",
   description:
     "Tell Yappr what you need. It calls local businesses in their language, shows a live transcript, and summarizes the conversation.",
+};
+
+/**
+ * `resizes-content` shrinks the layout viewport when the on-screen keyboard
+ * opens, so the mid-call decision card — which is docked to the bottom of the
+ * screen and now contains a text field — rides above the keyboard instead of
+ * being covered by it.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
 };
 
 /**

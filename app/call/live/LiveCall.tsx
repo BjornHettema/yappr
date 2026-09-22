@@ -80,7 +80,6 @@ export default function LiveCall() {
   const [secondsLeft, setSecondsLeft] = useState(ANSWER_WINDOW_SECONDS);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const coachRef = useRef<HTMLTextAreaElement>(null);
   /** Mirrors `pending` for the async handlers, which can't read state. */
   const pendingRef = useRef<PendingQuestion | null>(null);
   /** A question being translated into the traveler's language, not yet shown. */
@@ -570,20 +569,16 @@ export default function LiveCall() {
   }
 
   /**
-   * The coach box doubles as the answer box: while a question is open, what
-   * the traveler types IS their decision. "No, but ask about Saturday" is a
-   * real answer that two buttons cannot express, and routing it through the
-   * coaching channel instead would leave Yappr still waiting.
+   * A private nudge to Yappr mid-call. Not available while a question is open:
+   * answering in your own words happens on the decision card itself, and two
+   * live text boxes both claiming to talk to Yappr — one of which would leave
+   * the question unanswered — is a choice nobody should have to make with a
+   * business holding the line.
    */
   function sendCoach() {
     const note = coach.trim();
-    if (!note) return;
+    if (!note || questionOpen()) return;
     setCoach("");
-
-    if (pendingRef.current) {
-      answerQuestion(note);
-      return;
-    }
 
     pushLine({
       speaker: "you",
@@ -592,11 +587,6 @@ export default function LiveCall() {
       language: brief.travelerLanguage,
     });
     sendUserMessage(`[TRAVELER COACHING] ${note}`);
-  }
-
-  function focusCoach() {
-    coachRef.current?.focus();
-    coachRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
   /**
@@ -692,25 +682,26 @@ export default function LiveCall() {
             </button>
           </div>
           <label className="field" style={{ marginTop: 16 }}>
-            {pending ? "Answer in your own words" : "Coach Yappr mid-call"}
+            Coach Yappr mid-call
             <textarea
-              ref={coachRef}
               value={coach}
               onChange={(e) => setCoach(e.target.value)}
+              disabled={Boolean(pending)}
               placeholder={
                 pending
-                  ? "No, but ask if Saturday is free."
+                  ? "Answer the question below first."
                   : "Ask for outdoor seating instead."
               }
             />
           </label>
           <div className="actions">
             <button
-              className={`btn ${pending ? "btn-primary" : "btn-ghost"}`}
+              className="btn btn-ghost"
               type="button"
               onClick={sendCoach}
+              disabled={Boolean(pending)}
             >
-              {pending ? "Send answer" : "Send note"}
+              Send note
             </button>
             <button className="btn btn-danger" type="button" onClick={() => void hangUp()}>
               Hang up
@@ -744,10 +735,12 @@ export default function LiveCall() {
 
       {pending ? (
         <DecisionPrompt
+          // Keyed so a second question arrives with a clean card rather than
+          // inheriting the first one's half-typed answer.
+          key={pending.id}
           question={pending}
           secondsLeft={secondsLeft}
           onAnswer={answerQuestion}
-          onSomethingElse={focusCoach}
         />
       ) : null}
     </main>

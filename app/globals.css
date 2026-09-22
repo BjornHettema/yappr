@@ -1094,6 +1094,27 @@ ul.clean.ticked li::before {
   margin-top: 16px;
 }
 
+/* One line, not a textarea: an answer here is "no, but ask about Saturday",
+   and a tall box in a docked card costs room the keyboard already wants. */
+.decision-answer {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.decision-answer input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A disabled field should look unavailable, not broken. */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @keyframes decision-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
