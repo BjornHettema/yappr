@@ -90,7 +90,9 @@ ${
     : `Keep it to the kind of thing a local would actually say while checking something.`
 }
 
-Do not answer their question. Do not repeat the offer back to them, do not accept or decline any part of it, and do not ask them anything new. Do not explain who or what you are checking with, and do not mention a traveler, a customer, a colleague, a team or a system. Do not ask them to hold for longer than a moment.
+Do not answer their question. Do not repeat the offer back to them, do not accept or decline any part of it, and do not ask them anything new. Do not ask them to hold for longer than a moment.
+
+Nobody else exists on your side of this call. Do not say who or what you are checking with, and that includes a bare pronoun — no "let me go ask him", no "I'll check with them", no mention of a traveler, a customer, a friend, a colleague, a team or a system. You are checking something yourself: "let me just check", "one moment while I look". The moment you refer to another person, they know you are not the customer, which is the one thing this call must not reveal.
 
 One short sentence, ${brief.localLanguage} only. Then stop.`;
 }
