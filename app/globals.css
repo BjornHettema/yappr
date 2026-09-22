@@ -909,9 +909,10 @@ ul.clean li {
   animation: decision-in 260ms var(--ease-out) both;
 }
 
-/* So the last transcript line is never trapped behind the dock. */
+/* So the last transcript line is never trapped behind the dock. Roughly the
+   dock's own height; the gradient covers the rest. */
 .page.has-decision {
-  padding-bottom: 340px;
+  padding-bottom: 260px;
 }
 
 .decision {
@@ -1147,7 +1148,7 @@ ul.clean li {
   }
 
   .page.has-decision {
-    padding-bottom: 380px;
+    padding-bottom: 320px;
   }
 }
 

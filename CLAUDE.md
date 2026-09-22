@@ -31,6 +31,7 @@ app/
   api/translate/route.ts           One-off text translation for the live transcript
   api/access/route.ts              Checks the passcode, sets the access cookie
   components/TranscriptLineView.tsx  One transcript line, shared by live call + summary
+  components/DecisionPrompt.tsx      The docked mid-call "they're holding for you" question
 lib/
   languages.ts    Dropdown options (traveler/local languages, business types)
   openai.ts       OpenAI headers/models, the shared `callOpenAI` fetch wrapper,
@@ -89,6 +90,17 @@ request time inside route handlers, never at module load or build time.
   rather than calling `fetch` against OpenAI directly, and should end with
   `catch (error) { return errorResponse(error, "<fallback>"); }`. That keeps the
   upstream status code on failures and stops the four routes from drifting apart.
+- **Yappr has no authority to accept anything the traveler didn't write.** If
+  the business offers something different — another seat, time, date, price,
+  quantity or item — the model must call the `ask_traveler` tool (defined in
+  `lib/openai.ts`, handled in `LiveCall.tsx`), say a holding line in the local
+  language and go silent until a `[TRAVELER ANSWER]` message arrives. While a
+  question is open, the business turn is suppressed and `end_call` is ignored;
+  after `ANSWER_WINDOW_SECONDS` Yappr says it will call back and hangs up
+  rather than choosing. Don't reintroduce "offer a practical alternative" or
+  any rule that lets it decide — it is the whole point of the gate, and the
+  only sanctioned exception is explicit latitude written in the brief's extra
+  notes.
 - **Transcript lines render through `app/components/TranscriptLineView.tsx`** in
   both the live call and the summary page — don't hand-roll the `<article
   className="line …">` markup again; the two copies had already drifted once.

@@ -135,6 +135,58 @@ session's live check is sitting on the first tab and can be deleted.
 Verified live on the deployed site: chips, the disabled-until-answered send
 button, the thank-you state and a `200` from `/api/test-log`.
 
+### 10. Yappr may no longer choose for the traveler (commit `183fe5a`)
+
+Jeroen's call, and the right one: Yappr had standing permission to improvise
+— *"if something is unavailable, offer a practical alternative"* — which is how
+someone ends up holding a middle seat they never agreed to. Its authority is
+now exactly what the traveler wrote.
+
+Anything different the business offers is a new offer it cannot accept,
+decline or pick between. It says a short holding line in the local language,
+calls the new **`ask_traveler`** tool, and goes silent. A tool rather than
+another prompt rule, deliberately: the model then has to *declare* the fork
+instead of resolving it quietly, and a prompt rule alone is what produced the
+crab-dish bug.
+
+The traveler gets a docked card (`app/components/DecisionPrompt.tsx`) with the
+business's actual words, translated, **and** one short yes/no question. Both,
+because the quote is the evidence and the question is the action. The coach box
+becomes the answer box while a question is open, so "no, but ask about
+Saturday" — which two buttons cannot express — still works.
+
+Decisions settled with Jeroen: **any** difference needs a yes (not just
+material ones); buttons plus free text; and on no answer within
+`ANSWER_WINDOW_SECONDS` (45) Yappr apologises, says it will call back and hangs
+up rather than taking the offer. A lost call can be remade; a booking on a
+substitute cannot be unmade.
+
+While a question is open, the simulated business turn is suppressed and
+`end_call` is ignored — checked twice in `afterAgentSpoke`, because the tool
+call and the spoken hold line arrive as independent events.
+
+Also in this commit: the business simulator now runs out of things sometimes
+(otherwise the fork is unreachable in a demo), the summary reports a declined
+offer as the traveler's decision rather than as unavailability, and every fork
+is logged with how many seconds the traveler took — which is really a test of
+whether testers are at the screen while the call runs.
+
+**Verified live, full loop.** Asked for front-row boxing seats; the stadium
+offered the second row; Yappr said *"สักครู่นะครับ เดี๋ยวผมเช็กก่อนครับ"* and
+asked. Declined → it said no, asked what else there was, got "nothing, any
+day" and came straight back through `ask_traveler` instead of accepting. Let
+the clock run out → it apologised, said it would call back, hung up, and the
+summary came out `unavailable` with *"Traveler did not accept second row seats"*
+under Still open. Nothing was ever agreed on the traveler's behalf.
+
+Two prompt polish items came out of watching it: the decline line read as
+*"we do not accept the second row"* (fixed — one person on the phone, not a
+company), and the summary was putting facts it had merely learned under "What
+was agreed" (fixed — that field is for things actually arranged).
+
+**Still needs Jeroen:** the collector re-paste from item 9 now also picks up
+two new columns, `forks` and `decisions`.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
