@@ -100,7 +100,13 @@ request time inside route handlers, never at module load or build time.
   to do it itself the model skipped the second one on a live call. While a
   question is open, the business turn is suppressed and `end_call` is ignored;
   after `ANSWER_WINDOW_SECONDS` (30, and that is Jeroen's ceiling) Yappr says
-  it will call back and hangs up rather than choosing. Don't reintroduce "offer a practical alternative" or
+  it will call back and hangs up rather than choosing.
+  **Anything the model produces for the traveler to read goes through
+  `/api/translate` before it is shown** — the question and its option labels
+  included. The model is under a speak-only-the-local-language instruction for
+  the whole call and intermittently applies it to tool arguments too, which is
+  how an English traveler got a Thai question. Don't "fix" that class of bug by
+  strengthening the prompt; pin it in the client. Don't reintroduce "offer a practical alternative" or
   any rule that lets it decide — it is the whole point of the gate, and the
   only sanctioned exception is explicit latitude written in the brief's extra
   notes.

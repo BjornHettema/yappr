@@ -245,6 +245,49 @@ placing five calls: booked, unavailable, pending and a failed write-up, in both
 themes. Worth reusing — `sessionStorage.setItem("yappr.summary", …)` then
 reload is much the fastest way to exercise this page.
 
+### 12. The decision card, after Jeroen tested it properly (commit `4cca13c`)
+
+Two bugs on one call, both worth understanding rather than just patching.
+
+**The question came back in Thai for an English traveller — sometimes.** The
+inconsistency was the diagnosis: *"what they said"* was always right because it
+goes through `/api/translate`, while `question` and `options` came straight out
+of the model, which spends the whole call under an instruction to speak only
+the local language and sometimes applies that to its tool arguments too.
+Asking more firmly would only have changed the failure rate. So the question
+and the labels now go through the translator as well, with `translatePrompt`
+told to return text already in the target language unchanged — the correct case
+costs a round trip and changes nothing. Everything resolves in one
+`Promise.all` and the card appears complete rather than rewriting itself under
+someone's finger, and a failed translation falls back to the model's text
+(wrong language beats no card while a business holds the line).
+
+**The general lesson, twice over now:** anything the model emits for the
+traveller to *read* should be pinned by the client. Anything it says out loud
+is the model's job. When a bug here is intermittent, look first for the path
+that skips the translator.
+
+That introduces a gap — tool call received, card not yet shown — where a
+business reply could land mid-hold, so `questionOpen()` now covers both states
+and every suppression check uses it.
+
+**Only the first button was filled**, which reads as a recommendation. Fine for
+yes/no, wrong otherwise — and on the offending call the shop offered 17:00 *or*
+15:30 and Yappr put only 17:00 to the traveller as a yes/no. That is Yappr
+choosing, the exact thing the card exists to prevent. The tool now declares
+`kind`: `"confirm"` (one offer, accepting option leads) or `"choice"` (every
+alternative the business named, rendered as peers with nothing filled).
+**Unknown or missing `kind` falls back to `"choice"`** — false emphasis is the
+worse failure, so fail toward none.
+
+Verified: asked for 16:00, shop offered 15:30 or 17:00, card came up in English
+with both times as equal buttons, picked 17:00, and the table was booked for
+17:00 for six.
+
+Also: the dock gained a 34px fade band above it. On a narrow window "Hang up"
+lands directly above the card, and the band swallows that tap rather than
+letting a mis-tap end the call.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
