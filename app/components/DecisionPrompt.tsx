@@ -15,6 +15,7 @@
  */
 
 import { useState } from "react";
+import { isLeadingOption } from "@/lib/callFlow";
 import type { PendingQuestion } from "@/lib/types";
 
 export default function DecisionPrompt({
@@ -115,7 +116,7 @@ export default function DecisionPrompt({
               // would read as Yappr's recommendation — which is the nudge this
               // whole screen exists to avoid.
               className={`btn ${
-                question.kind === "confirm" && index === 0 ? "btn-primary" : "btn-ghost"
+                isLeadingOption(question.kind, index) ? "btn-primary" : "btn-ghost"
               }`}
               onClick={() => onAnswer(option)}
             >

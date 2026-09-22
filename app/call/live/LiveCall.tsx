@@ -26,6 +26,19 @@ import {
   holdInstructions,
   travelerAnswer,
 } from "@/lib/prompts";
+import {
+  correctionSent,
+  hangUpRefused,
+  holdLineRequested,
+  initialCallFlow,
+  parseAskTraveler,
+  secondsRemaining,
+  shouldCorrectQuestion,
+  shouldRefuseHangUp,
+  travelerAnswered,
+  windUpStarted,
+  yapprSpoke,
+} from "@/lib/callFlow";
 import { testLoggingActive } from "@/lib/testLog";
 
 type RealtimeEvent = {
@@ -100,21 +113,15 @@ export default function LiveCall() {
   const holdQueued = useRef<string | null>(null);
   /** Whether the response now in flight has produced any speech. */
   const spokeThisResponse = useRef(false);
-  /** The next line Yappr speaks is the hold line we asked for, not a real turn. */
-  const expectHoldLine = useRef(false);
-  /**
-   * An answer has gone to Yappr and it has not said anything to the business
-   * since. Raising a second question in that state means the traveler is being
-   * asked something only the business can answer.
-   */
-  const answerNotSpoken = useRef(false);
-  /** One correction per answer, so a stubborn model can't be argued with forever. */
-  const correctionSent = useRef(false);
   /** Correction instructions waiting for the current response to finish. */
   const correctionQueued = useRef<string | null>(null);
-  const hangUpBlockedOnce = useRef(false);
-  /** Winding up after an unanswered hold: the guard below must not fight it. */
-  const windingUp = useRef(false);
+  /**
+   * The mid-call decision protocol's bookkeeping. Pure, and tested in
+   * lib/callFlow.test.ts against the four bugs that reached a live call — it
+   * used to be five loose refs in here, which is how three of them got
+   * through. Read that file before changing any of this.
+   */
+  const flow = useRef(initialCallFlow());
 
   useEffect(() => {
     linesRef.current = lines;
@@ -130,9 +137,9 @@ export default function LiveCall() {
   useEffect(() => {
     if (!pending) return;
 
-    const deadline = pending.askedAt + ANSWER_WINDOW_SECONDS * 1000;
+    const askedAt = pending.askedAt;
     function tick() {
-      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const left = secondsRemaining(askedAt, ANSWER_WINDOW_SECONDS, Date.now());
       setSecondsLeft(left);
       if (left <= 0) expireQuestion();
     }
@@ -305,36 +312,6 @@ export default function LiveCall() {
     return pendingRef.current !== null || preparingQuestion.current;
   }
 
-  /**
-   * Is Yappr still waiting on a reply to something it said after the
-   * traveler's last answer? If so, nothing is arranged yet and the call must
-   * not end: it once asked to book 20:30, was never answered, hung up, and the
-   * summary read "Confirmed".
-   *
-   * Read off the transcript rather than set by whatever produced the business
-   * line, deliberately. `api/simulate-business` is temporary scaffolding and
-   * goes when real calls arrive (see docs/telephony-migration.md); a flag set
-   * inside that fetch would silently stop being set, and this guard would then
-   * block every hang-up forever. Any source of business turns keeps this
-   * working, because a business turn reaching the transcript is the product.
-   */
-  function awaitingBusinessReply() {
-    const lines = linesRef.current;
-    let lastAnswer = -1;
-    for (let i = lines.length - 1; i >= 0; i -= 1) {
-      if (lines[i].speaker === "you") {
-        lastAnswer = i;
-        break;
-      }
-    }
-    if (lastAnswer === -1) return false;
-
-    for (let i = lastAnswer + 1; i < lines.length; i += 1) {
-      if (lines[i].speaker === "business") return false;
-    }
-    return true;
-  }
-
   /** Keeps the ref and the rendered state in step; always use this, not setPending. */
   function setPendingQuestion(next: PendingQuestion | null) {
     pendingRef.current = next;
@@ -356,56 +333,27 @@ export default function LiveCall() {
     // while the first is still being prepared.
     if (pendingRef.current || preparingQuestion.current || hangingUp.current) return;
 
-    let parsed: {
-      kind?: string;
-      question?: string;
-      businessSaid?: string;
-      options?: unknown;
-    };
-    try {
-      parsed = JSON.parse(rawArgs || "{}");
-    } catch {
-      return;
-    }
-
-    const question = (parsed.question || "").trim();
-    if (!question) return;
+    const args = parseAskTraveler(rawArgs);
+    if (!args) return;
 
     // Nothing has been said on the line since the traveler last answered, so
     // whatever is being asked now cannot have come from the business. Send it
     // back once rather than showing a card that asks the traveler to speak for
     // the shop.
-    if (answerNotSpoken.current && !correctionSent.current) {
-      correctionSent.current = true;
+    if (shouldCorrectQuestion(flow.current)) {
+      flow.current = correctionSent(flow.current);
       // Queued for the same reason the hold line is: the response carrying
       // this tool call is still open.
       correctionQueued.current = answerNotRelayed(brief);
       return;
     }
 
-    const options = (Array.isArray(parsed.options) ? parsed.options : [])
-      .map((option) => String(option).trim())
-      .filter(Boolean)
-      .slice(0, 3);
-
     const draft: PendingQuestion = {
+      ...args,
       id: newId(),
       callId: callId || "",
-      // Unknown or missing falls back to "choice", which renders every option
-      // as an equal peer. Failing that way round is harmless; falling back to
-      // "confirm" would put false emphasis on whichever option came first.
-      kind:
-        parsed.kind === "confirm" || parsed.kind === "info"
-          ? parsed.kind
-          : "choice",
-      question,
-      questionRaw: question,
-      businessSaid: (parsed.businessSaid || "").trim(),
+      questionRaw: args.question,
       businessSaidTranslated: "",
-      // "info" is answered by typing, so no options is the right answer there;
-      // anywhere else, a card with nothing to press would be a dead end.
-      options:
-        options.length || parsed.kind === "info" ? options : ["Yes", "No"],
       // Timed from now, not from when the card appears: the business starts
       // waiting the moment Yappr says "one moment", and 30s is their ceiling.
       askedAt: Date.now(),
@@ -522,9 +470,7 @@ export default function LiveCall() {
     });
     // Until Yappr says this to the business, it has no new information and no
     // business asking the traveler anything else.
-    answerNotSpoken.current = true;
-    correctionSent.current = false;
-    hangUpBlockedOnce.current = false;
+    flow.current = travelerAnswered(flow.current);
     sendUserMessage(travelerAnswer(current.question, text, current.kind));
   }
 
@@ -541,7 +487,7 @@ export default function LiveCall() {
     // The line below is a "you" line, so the unanswered-request guard would
     // otherwise read the wind-up as a request nobody answered and refuse to
     // let the call end — which is the one thing that has to happen here.
-    windingUp.current = true;
+    flow.current = windUpStarted(flow.current);
     setStatus("No answer — wrapping up");
     pushLine({
       speaker: "you",
@@ -560,11 +506,7 @@ export default function LiveCall() {
     // A hold line is the client asking for "one moment" — it carries none of
     // the traveler's answer, so it doesn't count as having relayed it.
     // Anything else Yappr says does.
-    if (expectHoldLine.current) {
-      expectHoldLine.current = false;
-    } else {
-      answerNotSpoken.current = false;
-    }
+    flow.current = yapprSpoke(flow.current);
 
     await speak("yappr", original);
 
@@ -639,7 +581,7 @@ export default function LiveCall() {
         // not the traveler's answer, which is the whole complaint.
         send({ type: "response.create", response: { instructions: correction } });
       } else if (hold && !spokeThisResponse.current && !hangingUp.current) {
-        expectHoldLine.current = true;
+        flow.current = holdLineRequested(flow.current);
         send({ type: "response.create", response: { instructions: hold } });
       }
       spokeThisResponse.current = false;
@@ -657,8 +599,8 @@ export default function LiveCall() {
         // Nor on a request the business has not answered. Yappr asked to book
         // 20:30, nobody said yes, it hung up, and the summary read "Confirmed"
         // — a booking the traveler would have turned up for.
-        if (awaitingBusinessReply() && !windingUp.current && !hangUpBlockedOnce.current) {
-          hangUpBlockedOnce.current = true;
+        if (shouldRefuseHangUp(flow.current, linesRef.current)) {
+          flow.current = hangUpRefused(flow.current);
           correctionQueued.current = confirmationMissing(brief);
           return;
         }

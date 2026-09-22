@@ -394,9 +394,50 @@ been to take that judgement away from it — the hold line, the language of the
 question, the ordering, the hang-up. Prefer a client-side invariant over a
 firmer instruction.
 
+### 15. The decision guards are now tested (commit `dd0fd3d`)
+
+Jeroen chose paying down the debt over chasing testers, and the debt was
+specific: three invariants were holding up the mid-call decision gate, each
+added because a live call went wrong, and **nothing tested any of them**. They
+were five loose refs inside an 847-line component, which is largely how three
+of the four bugs got through.
+
+`lib/callFlow.ts` now holds them as pure logic — the flow state machine, the
+`ask_traveler` argument parsing, the transcript-derived hang-up guard, the
+countdown maths — and `lib/callFlow.test.ts` pins each historical failure as a
+named case. **Read the file header before deleting a case**; they are not
+hypotheticals.
+
+**The tests were checked for teeth.** Mutating the hold-line rule, the `kind`
+fallback and the hang-up guard each turns exactly one case red. A test that
+cannot fail is decoration, and it is worth re-doing that check after editing
+them.
+
+Vitest, `npm test`. No behaviour change intended; `LiveCall.tsx` went 847 →
+789 lines and `DecisionPrompt` now shares the tested `isLeadingOption` instead
+of repeating the rule.
+
+**One thing needs Jeroen, because the PAT can't do it.** GitHub refuses a
+fine-grained token without `workflow` scope on `.github/workflows/`, so the
+CI step was not pushed. Until it is, the tests only run locally. Add this
+between `typecheck` and `build` in `.github/workflows/ci.yml`:
+
+```yaml
+      # Pins the mid-call decision guards. Each case in lib/callFlow.test.ts is
+      # a bug that reached a live call, so a failure here is a regression, not
+      # a stale test. See the file header before "simplifying" one away.
+      - run: npm test
+```
+
+Either edit it in GitHub's web editor, or hand a future session a PAT with
+`workflow` scope.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
+- **A fine-grained PAT without `workflow` scope cannot push changes to
+  `.github/workflows/`.** GitHub rejects the whole push, not just that file, so
+  commit workflow edits separately or they will block everything behind them.
 - **`gh` CLI OAuth device-flow login is blocked**, and the **GitHub API is refused** even with a valid PAT in the header ("GitHub access to this repository is not enabled for this session. Use add_repo…"); there is no `add_repo` tool to invoke, so don't hunt for it. Pushing works with a fresh user-supplied fine-grained PAT used transiently via `http.extraHeader` (see `CLAUDE.md`). To read CI status, `WebFetch` https://github.com/BjornHettema/yappr/actions — the repo is public, so that works.
 - **`WebFetch` can't see these pages' content** — they're client-rendered, so it only returns `<head>` metadata and will make you think the passcode gate is off when it isn't. Use a browser tool.
 - **The browser pane's `read_page` returns "(empty page)" / viewport 0x0 while the pane is hidden.** `get_page_text` still works, and filling the brief form via `javascript_tool` (native value setter + dispatched `input`/`change` events, since the inputs are React-controlled) works without needing refs. That's the reliable way to drive a test call when you can't see the pane.

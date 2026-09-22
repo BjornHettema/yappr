@@ -49,6 +49,7 @@ npm run dev         # http://localhost:3000
 npm run build        # also type-checks
 npm run lint
 npm run typecheck    # tsc --noEmit, faster than a full build
+npm test             # vitest run — the mid-call decision guards
 ```
 
 ## Environment variables
@@ -143,11 +144,20 @@ request time inside route handlers, never at module load or build time.
   while leaving the recording on. One flag (`testLoggingActive()`) gates the
   notice, the session recording and the feedback form together — keep it that
   way.
-- **There are no automated tests yet.** Verify changes by running `npm run
-  dev` and walking through: brief a call -> live call page connects and a
-  transcript appears -> hang up -> summary page shows content. `npm run
-  lint`, `npm run typecheck`, and `npm run build` should all stay clean —
-  CI (`.github/workflows/ci.yml`) runs all three on every push/PR to `main`.
+- **`lib/callFlow.test.ts` is the only test file, and every case in it is a bug
+  that reached a live call.** It covers the mid-call decision protocol —
+  hold line, ordering, hang-up, option parsing. A failure there is a
+  regression, not a stale test; read the file header before changing one. When
+  you edit those tests, re-check that they can still fail (mutate the rule,
+  watch it go red) — the guards are quiet, so a test that cannot fail is worse
+  than none.
+- **Everything else is verified by hand.** Run `npm run dev` and walk through:
+  brief a call -> live call page connects and a transcript appears -> hang up ->
+  summary page shows content. For the summary specifically, seeding
+  `sessionStorage` ("yappr.summary", "yappr.transcript", "yappr.callBrief") and
+  reloading `/call/summary` is far faster than placing calls. `npm run lint`,
+  `npm run typecheck`, `npm test` and `npm run build` should all stay clean —
+  CI (`.github/workflows/ci.yml`) runs them on every push/PR to `main`.
 
 ## Workflow
 
