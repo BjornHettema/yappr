@@ -49,6 +49,12 @@ export type PendingQuestion = {
   kind: "confirm" | "choice";
   /** Short and answerable, in the traveler's language. */
   question: string;
+  /**
+   * The question exactly as the model wrote it, before it was put through the
+   * translator. Kept only so the testing log can show how often the model
+   * drifts into the local language — see TESTING-ONLY.md. Never rendered.
+   */
+  questionRaw: string;
   /** What the business said, in their own words. */
   businessSaid: string;
   /** The same line in the traveler's language. Empty until it arrives. */

@@ -48,6 +48,7 @@ var HEADERS = [
   'sessionId',
   'forks',
   'decisions',
+  'rescuedQuestions',
 ];
 
 /** Feedback tab columns. Same append-only rule. */
@@ -111,8 +112,15 @@ function doPost(e) {
     var decisions = (data.decisions || [])
       .map(function (d) {
         return (
-          'Q: ' +
+          '[' +
+          (d.kind || '?') +
+          '] Q: ' +
           (d.question || '') +
+          (d.questionAsWritten
+            ? '\n  WRONG LANGUAGE, rescued from: ' + d.questionAsWritten
+            : '') +
+          '\n  options: ' +
+          (d.options || []).join(' / ') +
           '\n  they said: ' +
           (d.businessSaid || '') +
           '\n  answer: ' +
@@ -154,6 +162,9 @@ function doPost(e) {
       data.sessionId || '',
       data.forks === null || data.forks === undefined ? '' : data.forks,
       decisions,
+      data.rescuedQuestions === null || data.rescuedQuestions === undefined
+        ? ''
+        : data.rescuedQuestions,
     ]);
 
     return ContentService.createTextOutput(

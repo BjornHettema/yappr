@@ -48,7 +48,10 @@ function buildInfo() {
 
 /** One mid-call fork the traveler was asked to settle. */
 type Decision = {
+  kind?: string;
   question?: string;
+  /** Set only when the model wrote the question in the wrong language. */
+  questionAsWritten?: string | null;
   businessSaid?: string;
   options?: string[];
   answer?: string;
@@ -161,6 +164,11 @@ export async function POST(req: Request) {
       // `secondsToAnswer` is the one that says whether testers are actually
       // at the screen while the call is running.
       forks: body.decisions?.length ?? 0,
+      // How many of those questions the model wrote in the wrong language and
+      // the translator had to rescue. Should trend to zero; if it doesn't, the
+      // client-side guard is the only thing keeping the card readable.
+      rescuedQuestions:
+        body.decisions?.filter((decision) => decision.questionAsWritten).length ?? 0,
       decisions: body.decisions ?? [],
     };
 

@@ -37,7 +37,15 @@ type RealtimeEvent = {
 
 /** One fork the traveler was asked to settle. Kept for the summary and the log. */
 type Decision = {
+  kind: string;
   question: string;
+  /**
+   * What the model originally wrote, recorded only when the translator had to
+   * change it. That is the wrong-language drift showing up in the wild, and
+   * counting it is the only way to know whether the guard is still earning its
+   * round trip. Null means the model got it right on its own.
+   */
+  questionAsWritten: string | null;
   businessSaid: string;
   options: string[];
   answer: string;
@@ -330,6 +338,7 @@ export default function LiveCall() {
       // "confirm" would put false emphasis on whichever option came first.
       kind: parsed.kind === "confirm" ? "confirm" : "choice",
       question,
+      questionRaw: question,
       businessSaid: (parsed.businessSaid || "").trim(),
       businessSaidTranslated: "",
       options: options.length ? options : ["Yes", "No"],
@@ -421,7 +430,10 @@ export default function LiveCall() {
     decisions.current = [
       ...decisions.current,
       {
+        kind: question.kind,
         question: question.question,
+        questionAsWritten:
+          question.questionRaw === question.question ? null : question.questionRaw,
         businessSaid: question.businessSaid,
         options: question.options,
         answer,

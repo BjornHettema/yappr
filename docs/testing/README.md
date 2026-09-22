@@ -117,13 +117,25 @@ just means that tester skipped the form, which is itself worth noticing.
 `travelerLanguage`, `localLanguage`, `businessType`, `place`, `goal`,
 `extraNotes`, `turns`, `outcome`, `headline`, `agreed`, `unresolved`,
 `nextSteps`, `transcript`, `commitMessage`, `deploymentUrl`, `raw`,
-`sessionId`, `forks`, `decisions`.
+`sessionId`, `forks`, `decisions`, `rescuedQuestions`.
 
 `forks` is how many times Yappr stopped and asked the traveller to decide;
-`decisions` spells each one out with what was offered, what they chose and how
-long they took. A high `secondsToAnswer`, or a `(no answer — Yappr ended the
-call)`, means the tester was not at the screen while the call ran — which is
-the assumption the whole mid-call gate rests on, so it is worth watching.
+`decisions` spells each one out — whether it was a `confirm` or a `choice`,
+what was offered, what they chose and how long they took.
+
+Three things to watch in there:
+
+- **A high `secondsToAnswer`**, or a `(no answer — Yappr ended the call)`, means
+  the tester was not at the screen while the call ran. The whole mid-call gate
+  assumes they are, so this is the number that tests the premise.
+- **`rescuedQuestions` above zero** means the model wrote the question in the
+  wrong language and the translator had to rescue it; the `decisions` cell shows
+  what it originally wrote, marked `WRONG LANGUAGE`. It should trend to zero. If
+  it doesn't, the client-side guard is the only thing keeping the card readable,
+  so nobody should be tempted to remove it as redundant.
+- **A `confirm` whose `businessSaid` names more than one alternative** is the
+  model collapsing a real choice into a yes/no and picking for the traveller.
+  That is the same class of bug as accepting a substitute outright.
 
 `raw` holds the complete JSON payload, so nothing is lost even if the flattened
 columns change later. Add new columns to the **end** of `HEADERS` only, or

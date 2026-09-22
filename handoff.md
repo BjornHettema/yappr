@@ -288,6 +288,16 @@ Also: the dock gained a 34px fade band above it. On a narrow window "Hang up"
 lands directly above the card, and the band swallows that tap rather than
 letting a mis-tap end the call.
 
+**The log now measures both of these rather than trusting the fix.** Each
+decision records its `kind`, its options, and — when the translator had to
+rescue it — the question as the model originally wrote it, flagged
+`WRONG LANGUAGE`. A session-level `rescuedQuestions` count makes the drift rate
+visible at a glance. Two things to read it for: `rescuedQuestions` should trend
+to zero (if it doesn't, the client-side guard is the only thing keeping the
+card readable, so nobody should later remove it as redundant), and a `confirm`
+whose `businessSaid` names more than one alternative is the model collapsing a
+real choice into a yes/no — the same class of bug as accepting a substitute.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
