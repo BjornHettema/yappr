@@ -192,10 +192,16 @@ the clock run out → it apologised, said it would call back, hung up, and the
 summary came out `unavailable` with *"Traveler did not accept second row seats"*
 under Still open. Nothing was ever agreed on the traveler's behalf.
 
-Two prompt polish items came out of watching it: the decline line read as
-*"we do not accept the second row"* (fixed — one person on the phone, not a
-company), and the summary was putting facts it had merely learned under "What
-was agreed" (fixed — that field is for things actually arranged).
+Three prompt polish items came out of watching it run: the decline line read
+as *"we do not accept the second row"* (fixed — one person on the phone, not a
+company); the summary was putting facts it had merely learned under "What was
+agreed" (fixed — that field is for things actually arranged); and the holding
+line came out as *"let me go ask him first"*, which tells the business the
+caller is not the customer. The rule against explaining who you are checking
+with was already there — a bare pronoun went straight through it, so pronouns
+are now named explicitly. Watch for this class of leak whenever the prompts
+change: it is the same failure as the old narration bug, and it keeps coming
+back in a new grammatical costume.
 
 **Still needs Jeroen:** the collector re-paste from item 9 now also picks up
 two new columns, `forks` and `decisions`.
