@@ -106,7 +106,20 @@ request time inside route handlers, never at module load or build time.
   included. The model is under a speak-only-the-local-language instruction for
   the whole call and intermittently applies it to tool arguments too, which is
   how an English traveler got a Thai question. Don't "fix" that class of bug by
-  strengthening the prompt; pin it in the client. Don't reintroduce "offer a practical alternative" or
+  strengthening the prompt; pin it in the client.
+  **Three invariants in `LiveCall.tsx` exist because the model got the
+  judgement wrong on a live call — don't relax them into instructions.**
+  `answerNotSpoken`: `ask_traveler` is refused while nothing has been said to
+  the business since the traveler's last answer (otherwise the traveler gets
+  asked things only the shop can answer, addressed as though they *were* the
+  shop). `businessSpokeSinceAnswer`: `end_call` is refused while a request made
+  since that answer is unanswered (it once hung up on an unanswered booking
+  request and the summary said "Confirmed"). `expectHoldLine`: the
+  client-driven hold line must not count as having relayed anything.
+  Also: a question answered with a value — a name, a number, a spelling — must
+  be `kind: "info"`, which renders a field. A button reading "here is my phone
+  number" carries no phone number, and Yappr then went and asked the business
+  for it. Don't reintroduce "offer a practical alternative" or
   any rule that lets it decide — it is the whole point of the gate, and the
   only sanctioned exception is explicit latitude written in the brief's extra
   notes.

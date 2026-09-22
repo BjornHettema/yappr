@@ -328,6 +328,58 @@ Verified live: declined 17:00 by typing "No, but ask if 18:00 is free" — Yappr
 declined, asked about 18:00, was offered 19:00, and came back with a fresh hold
 line and a clean card.
 
+### 14. Yappr was confusing the traveler with the business (commits `a0fc156`, `88b042a`)
+
+Jeroen's test broke the call completely, and the root cause was worse than any
+of the symptoms. He typed "at 10" as a counter-request. Yappr, instead of
+asking the salon whether 22:00 was free, showed **him** a card reading *"They
+asked for 10 PM. Can you offer that time?"* with *"Yes, 10 PM is available"* as
+the accepting option. It had cast its own client as the shop. From there it
+asked the salon for his name and phone number, and the salon asked straight
+back.
+
+Three fixes, and a fourth found while verifying them.
+
+**1. Who is who.** The prompts now state it and draw the consequences: never
+ask the traveler what only the business can answer (availability, price,
+policy — they are not there and have no idea), never ask the business for what
+only the traveler has, and never address either as though they were the other.
+
+**2. The ordering, enforced in the client**, because prompt rules have not held
+up in this codebase. `answerNotSpoken` tracks whether Yappr has said anything
+to the business since the last answer — the client-driven hold line doesn't
+count, which is what `expectHoldLine` is for. If `ask_traveler` fires while
+nothing has been relayed, whatever is being asked cannot have come from the
+business, so the call is refused once and sent back with `answerNotRelayed()`
+instead of opening a card nobody can answer. One correction per answer.
+
+**3. Some questions cannot have buttons.** *"Sure, here is my name and phone
+number"* contains neither, which is exactly why Yappr had nothing to say
+afterwards. New `kind: "info"` opens the text field as the answer, options
+reduced to a way out (*"I'd rather not say"*). Use it for anything answered
+with a value — name, number, spelling, date, headcount.
+
+**4. Found while verifying: it hung up on an unanswered request.** Yappr asked
+to book 20:30, the salon had not replied, `end_call` fired, and the summary
+read *"Confirmed — Thai massage booked for 20:30"* with the appointment under
+*What was agreed*. **Nobody had agreed to anything and the traveler would have
+turned up.** `end_call` is now refused while a request made since the last
+answer is unanswered (`businessSpokeSinceAnswer`), and the summary may only say
+"booked" when the local confirmed it in their own words — a transcript ending
+on an unanswered request is `pending` with nothing under agreed.
+
+Verified end to end: asked 21:00 → offered 20:00 or 22:00 as peers → picked
+20:00 → relayed → salon asked for name and number → **field, not buttons** →
+typed "Jeroen, +31 6 1234 5678" → Yappr gave it to the salon verbatim, spelling
+and digits intact → salon confirmed in its own words → only then did the call
+end, and "Confirmed" was earned.
+
+**The pattern across items 12, 13 and 14:** every serious bug here has been the
+model being handed a judgement it then got wrong, and every durable fix has
+been to take that judgement away from it — the hold line, the language of the
+question, the ordering, the hang-up. Prefer a client-side invariant over a
+firmer instruction.
+
 ## What failed / known blockers (standing)
 
 - **Vercel CLI/API is fully blocked from this cloud sandbox.** Any Vercel action (env vars, redeploys, domains) has to go through Jeroen in the dashboard.
