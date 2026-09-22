@@ -65,6 +65,13 @@ The business phone number is deliberately **not** recorded.
 Without the webhook you will lose most of the sessions. **Set it up first:
 `docs/testing/README.md` has the Apps Script and the step-by-step.**
 
+**Check the archive is alive before you test with anyone.** Open the Web app
+URL in a browser; it should say `POST sessions and feedback here`. A Google
+"page not found" means the deployment behind that URL is gone and every
+session is going nowhere — which is silent from inside the app, because a dead
+Apps Script answers with an HTML page rather than an error. `/api/test-log`
+reports `archive: "stored" | "failed" | "no-webhook"` for exactly this reason.
+
 ## How to turn it on
 
 In Vercel, set:

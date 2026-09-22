@@ -30,6 +30,32 @@ set aside rather than silently mixed in with newer ones.
 > keeps the same URL, so nothing in Vercel changes. Saving alone is not
 > enough. If rows stop matching the columns documented below, a stale
 > deployment is the first thing to check.
+>
+> **Do not use "New deployment" for a script change.** It mints a *different*
+> URL and can leave the old one archived — and the old one is what Vercel is
+> still pointing at, so every session silently goes nowhere. This has already
+> happened once. If you did it by accident, either update
+> `TEST_LOG_WEBHOOK_URL` in Vercel to the new URL and redeploy, or go back to
+> Manage deployments and publish a new *version* of the original.
+
+## Checking the collector is alive, in ten seconds
+
+Open the Web app URL in a browser. There are exactly three answers:
+
+| What you see | What it means |
+| --- | --- |
+| `Yappr test-session collector is running. POST sessions and feedback here.` | The current script is deployed. |
+| `…collector is running. POST sessions here.` (no "and feedback") | An **older version** is deployed. Paste the script again and publish a new version. |
+| A Google "Page not found" / "Sorry, the file cannot be opened" page | **The deployment behind this URL is gone.** Nothing is being recorded. Fix the URL or the deployment before testing with anyone. |
+
+That first line is a deliberate version marker — if you change the script's
+behaviour, change the `doGet` text too, so this check keeps working.
+
+From the app side, `/api/test-log` now answers with an `archive` field:
+`"stored"` means it reached the Sheet, `"failed"` means it did not and the
+session only exists in Vercel's runtime logs, `"no-webhook"` means none is
+configured. Place one call with the network tab open and look at that field —
+it is the only thing that actually proves the archive works.
 
 ## 3. Deploy it as a web app
 

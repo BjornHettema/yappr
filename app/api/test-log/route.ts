@@ -79,22 +79,52 @@ type FeedbackPayload = {
 
 type Payload = SessionPayload | FeedbackPayload;
 
-/** Send one record to the collector. Never throws. */
-async function forward(record: object) {
+/**
+ * Send one record to the collector. Never throws, but does report.
+ *
+ * It used to only catch a thrown fetch, which meant a dead collector was
+ * completely invisible: an archived Apps Script deployment answers with an
+ * HTML "page not found" rather than failing, so `fetch` resolved, nothing was
+ * logged, the endpoint still replied `{logged: true}`, and every session went
+ * nowhere. That is how a week of tester data disappears without anyone
+ * noticing. The status now comes back in the response so it shows up in the
+ * network tab, and a failure is shouted at the runtime log.
+ */
+async function forward(record: object): Promise<"stored" | "no-webhook" | "failed"> {
   // One line, so it can be grepped out of a log stream and parsed.
   console.log(`${TEST_LOG_MARKER} ${JSON.stringify(record)}`);
 
   const webhook = process.env.TEST_LOG_WEBHOOK_URL;
-  if (!webhook) return;
+  if (!webhook) {
+    console.warn(
+      `${TEST_LOG_MARKER} NO ARCHIVE: TEST_LOG_WEBHOOK_URL is unset, so this ` +
+        `session exists only in these logs and will age out. See docs/testing/README.md.`,
+    );
+    return "no-webhook";
+  }
 
-  // Never let a failing webhook break the end of someone's call.
-  await fetch(webhook, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record),
-  }).catch((error) => {
-    console.warn(`${TEST_LOG_MARKER} webhook failed:`, error);
-  });
+  try {
+    const response = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record),
+    });
+    if (!response.ok) {
+      // The usual cause: the Apps Script was redeployed as a NEW deployment
+      // instead of a new version of the existing one, so the URL in Vercel now
+      // points at something archived.
+      console.error(
+        `${TEST_LOG_MARKER} ARCHIVE REJECTED THE RECORD (HTTP ${response.status}). ` +
+          `Nothing was stored. Check that TEST_LOG_WEBHOOK_URL still matches a live ` +
+          `Apps Script deployment — see docs/testing/README.md.`,
+      );
+      return "failed";
+    }
+    return "stored";
+  } catch (error) {
+    console.error(`${TEST_LOG_MARKER} ARCHIVE UNREACHABLE, nothing stored:`, error);
+    return "failed";
+  }
 }
 
 export async function POST(req: Request) {
@@ -129,14 +159,14 @@ export async function POST(req: Request) {
     };
 
     if (body.kind === "feedback") {
-      await forward({
+      const archive = await forward({
         ...common,
         kind: "feedback",
         gotIt: body.gotIt || null,
         wouldCall: body.wouldCall || null,
         comment: body.comment || null,
       });
-      return NextResponse.json({ logged: true });
+      return NextResponse.json({ logged: true, archive });
     }
 
     const record = {
@@ -172,9 +202,11 @@ export async function POST(req: Request) {
       decisions: body.decisions ?? [],
     };
 
-    await forward(record);
+    const archive = await forward(record);
 
-    return NextResponse.json({ logged: true });
+    // `archive` is the part that matters: "stored" means it reached the Sheet,
+    // anything else means this session only exists in the runtime logs.
+    return NextResponse.json({ logged: true, archive });
   } catch (error) {
     console.warn(`${TEST_LOG_MARKER} could not record session:`, error);
     return NextResponse.json({ logged: false, reason: "error" });
