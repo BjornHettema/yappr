@@ -374,6 +374,20 @@ typed "Jeroen, +31 6 1234 5678" → Yappr gave it to the salon verbatim, spellin
 and digits intact → salon confirmed in its own words → only then did the call
 end, and "Confirmed" was earned.
 
+**One of those guards was quietly coupled to scaffolding** — Jeroen's point
+that the simulated business side disappears when real calls arrive.
+`businessSpokeSinceAnswer` was set inside the `/api/simulate-business` fetch,
+so deleting that route would have stopped it ever being set and the guard would
+then have refused *every* hang-up for the rest of the call: a silent, total
+failure, found only by someone on a live call. It is now
+`awaitingBusinessReply()`, derived from the transcript, which holds for any
+source of business turns. The contract is written down:
+**`docs/telephony-migration.md`** covers what changes (pull becomes push, the
+`[BUSINESS]` channel dies, a real person cannot be paused), what survives and
+why, what stops being free (patience, the two round trips of silence before the
+hold line, interruption and a hang-up *by the business*), and a removal
+checklist. Read it before deleting the simulator.
+
 **The pattern across items 12, 13 and 14:** every serious bug here has been the
 model being handed a judgement it then got wrong, and every durable fix has
 been to take that judgement away from it — the hold line, the language of the

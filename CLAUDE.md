@@ -68,13 +68,21 @@ request time inside route handlers, never at module load or build time.
 
 ## Important context for future changes
 
-- **The "business" side of the call is simulated.** `api/simulate-business`
-  has an LLM roleplay the person answering the phone so the full loop is
-  demoable without a real phone line. Real outbound calling would replace
-  this with Twilio Voice + a media-stream bridge (see the README) — that
-  bridge needs a long-lived WebSocket connection, which does not fit a
-  typical serverless Next.js host, so it will likely need its own small
+- **The "business" side of the call is simulated, and it is scaffolding.**
+  `api/simulate-business` has an LLM roleplay the person answering the phone so
+  the full loop is demoable without a real phone line. Real outbound calling
+  would replace this with Twilio Voice + a media-stream bridge (see the
+  README) — that bridge needs a long-lived WebSocket connection, which does not
+  fit a typical serverless Next.js host, so it will likely need its own small
   always-on service rather than living in `app/api`.
+  **`docs/telephony-migration.md` is the file to read before deleting that
+  route.** The mid-call decision gate leans on business turns arriving, and the
+  short version is: whatever replaces the simulator must still push each
+  business turn into the transcript as a `business` line, because
+  `awaitingBusinessReply()` reads the transcript rather than trusting the
+  simulator. Don't re-couple a guard to that fetch — a flag set inside it would
+  silently stop being set and would then block every hang-up for the rest of
+  the call.
 - **The realtime voice connection is browser -> OpenAI directly**, via
   WebRTC, using a short-lived client secret minted by
   `api/realtime/session`. The Next.js server never proxies the audio.

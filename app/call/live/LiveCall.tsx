@@ -112,14 +112,9 @@ export default function LiveCall() {
   const correctionSent = useRef(false);
   /** Correction instructions waiting for the current response to finish. */
   const correctionQueued = useRef<string | null>(null);
-  /**
-   * The business has said something since the traveler's last answer. Starts
-   * true so calls that never fork are unaffected. While it is false, Yappr has
-   * made a request nobody has answered yet — and hanging up there produces a
-   * booking the traveler believes in and the business never made.
-   */
-  const businessSpokeSinceAnswer = useRef(true);
   const hangUpBlockedOnce = useRef(false);
+  /** Winding up after an unanswered hold: the guard below must not fight it. */
+  const windingUp = useRef(false);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -308,6 +303,36 @@ export default function LiveCall() {
    */
   function questionOpen() {
     return pendingRef.current !== null || preparingQuestion.current;
+  }
+
+  /**
+   * Is Yappr still waiting on a reply to something it said after the
+   * traveler's last answer? If so, nothing is arranged yet and the call must
+   * not end: it once asked to book 20:30, was never answered, hung up, and the
+   * summary read "Confirmed".
+   *
+   * Read off the transcript rather than set by whatever produced the business
+   * line, deliberately. `api/simulate-business` is temporary scaffolding and
+   * goes when real calls arrive (see docs/telephony-migration.md); a flag set
+   * inside that fetch would silently stop being set, and this guard would then
+   * block every hang-up forever. Any source of business turns keeps this
+   * working, because a business turn reaching the transcript is the product.
+   */
+  function awaitingBusinessReply() {
+    const lines = linesRef.current;
+    let lastAnswer = -1;
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+      if (lines[i].speaker === "you") {
+        lastAnswer = i;
+        break;
+      }
+    }
+    if (lastAnswer === -1) return false;
+
+    for (let i = lastAnswer + 1; i < lines.length; i += 1) {
+      if (lines[i].speaker === "business") return false;
+    }
+    return true;
   }
 
   /** Keeps the ref and the rendered state in step; always use this, not setPending. */
@@ -499,7 +524,6 @@ export default function LiveCall() {
     // business asking the traveler anything else.
     answerNotSpoken.current = true;
     correctionSent.current = false;
-    businessSpokeSinceAnswer.current = false;
     hangUpBlockedOnce.current = false;
     sendUserMessage(travelerAnswer(current.question, text, current.kind));
   }
@@ -514,6 +538,10 @@ export default function LiveCall() {
 
     setPendingQuestion(null);
     recordDecision(current, "(no answer — Yappr ended the call)");
+    // The line below is a "you" line, so the unanswered-request guard would
+    // otherwise read the wind-up as a request nobody answered and refuse to
+    // let the call end — which is the one thing that has to happen here.
+    windingUp.current = true;
     setStatus("No answer — wrapping up");
     pushLine({
       speaker: "you",
@@ -564,7 +592,6 @@ export default function LiveCall() {
       if (!res.ok || hangingUp.current || questionOpen()) return;
 
       const businessOriginal = data.reply as string;
-      businessSpokeSinceAnswer.current = true;
       await speak("business", businessOriginal);
       sendUserMessage(`[BUSINESS] ${businessOriginal}`);
     } finally {
@@ -630,7 +657,7 @@ export default function LiveCall() {
         // Nor on a request the business has not answered. Yappr asked to book
         // 20:30, nobody said yes, it hung up, and the summary read "Confirmed"
         // — a booking the traveler would have turned up for.
-        if (!businessSpokeSinceAnswer.current && !hangUpBlockedOnce.current) {
+        if (awaitingBusinessReply() && !windingUp.current && !hangUpBlockedOnce.current) {
           hangUpBlockedOnce.current = true;
           correctionQueued.current = confirmationMissing(brief);
           return;
