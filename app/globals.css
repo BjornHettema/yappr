@@ -49,6 +49,10 @@
   --autofill-fill: rgba(31, 106, 100, 0.07);
   --ok: #27a35a;
   --ok-halo: rgba(39, 163, 90, 0.15);
+  /* The state hues used AS TEXT. Measured on their own pill backgrounds:
+     5.4:1 for the green and 6.5:1 for the amber. --ok itself is a fill. */
+  --ok-text: #126b39;
+  --gold-text: #7a4a10;
   --danger: #8c1a12;
   --danger-bg: #fdeae5;
   --danger-edge: rgba(140, 26, 18, 0.35);
@@ -118,6 +122,9 @@
   --autofill-fill: rgba(95, 192, 180, 0.09);
   --ok: #4cc47d;
   --ok-halo: rgba(76, 196, 125, 0.18);
+  /* 7.7:1 and 7.8:1 on their pills against the dark surface. */
+  --ok-text: #6fe0a0;
+  --gold-text: #ecc178;
   --danger: #ff9a86;
   --danger-bg: #3a1a15;
   --danger-edge: rgba(255, 154, 134, 0.38);
@@ -732,6 +739,23 @@ textarea:user-invalid {
   box-shadow: 0 0 0 6px rgba(215, 161, 74, 0.18);
 }
 
+/* A "no" is a real answer, not a failure, so it gets no alarm colour. */
+.status-dot.no,
+.status-dot.neutral {
+  background: var(--text-muted);
+  box-shadow: 0 0 0 6px var(--hairline);
+}
+
+/* Folded, with the last visible line fading out rather than being sliced
+   through — a hard cut reads as a rendering bug. Not a nested scroll area:
+   on a phone, a scrollable box inside a scrollable page is miserable. */
+.transcript.clipped {
+  max-height: 440px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 74%, transparent);
+  mask-image: linear-gradient(180deg, #000 74%, transparent);
+}
+
 .transcript {
   display: flex;
   flex-direction: column;
@@ -877,8 +901,35 @@ textarea:user-invalid {
   margin: 26px 0 6px;
 }
 
-.summary-grid section h2:first-of-type {
+/* Each answer on this page is its own block, so spacing comes from the gap
+   between blocks rather than from guessing which heading happens to be first
+   — sections now appear and disappear depending on what the call achieved. */
+.summary-block h2,
+.summary-grid aside h2 {
   margin-top: 0;
+}
+
+.summary-block + .summary-block {
+  margin-top: 24px;
+}
+
+/* The verdict: the one thing someone reads before anything else. The label
+   always says it in words; these only make it visible from across a room. */
+.verdict.ok {
+  background: var(--ok-halo);
+  color: var(--ok-text);
+}
+
+.verdict.warn {
+  background: var(--tint-gold-strong);
+  color: var(--gold-text);
+}
+
+.verdict.no,
+.verdict.neutral {
+  background: var(--surface-tint);
+  color: var(--text-muted);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 ul.clean {
@@ -890,6 +941,56 @@ ul.clean {
 
 ul.clean li {
   margin-bottom: 4px;
+}
+
+/* Confirmed things get a tick: this list is the difference between what was
+   arranged and what was merely discussed. */
+ul.clean.ticked {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.clean.ticked li {
+  position: relative;
+  padding-left: 26px;
+  color: var(--text);
+}
+
+/* The "/ ''" is alt text: the tick is decoration, and a screen reader
+   announcing "check mark" before every line would be noise. */
+ul.clean.ticked li::before {
+  content: "✓" / "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  font-weight: 700;
+  color: var(--ok-text);
+}
+
+/* Said in place of a list, when the honest answer is that there is nothing
+   in it. Never a bare heading over blank space. */
+.empty {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* The write-up failed. Not styled as an error, because the call itself was
+   fine and the transcript is all there — this is a heads-up, not a fault. */
+.alert {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--tint-gold-strong);
+  box-shadow: inset 0 0 0 1px var(--gold-edge);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.alert .meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
 }
 
 /* ---------- mid-call decision ----------
