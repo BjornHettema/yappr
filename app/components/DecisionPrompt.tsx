@@ -65,7 +65,13 @@ export default function DecisionPrompt({
             <button
               key={option}
               type="button"
-              className={`btn ${index === 0 ? "btn-primary" : "btn-ghost"}`}
+              // Only a yes/no gets a leading option. When the business named
+              // several alternatives they are peers, and a filled first button
+              // would read as Yappr's recommendation — which is the nudge this
+              // whole screen exists to avoid.
+              className={`btn ${
+                question.kind === "confirm" && index === 0 ? "btn-primary" : "btn-ghost"
+              }`}
               onClick={() => onAnswer(option)}
             >
               {option}

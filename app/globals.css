@@ -1007,9 +1007,13 @@ ul.clean.ticked li::before {
   inset-inline: 0;
   bottom: 0;
   z-index: 20;
+  /* The band above the card fades the page out instead of cutting it off
+     mid-line, and doubles as a buffer: on a narrow window "Hang up" can end
+     up directly above this, and a mis-tap there ends someone's call. The band
+     swallows the tap rather than letting it through. */
+  padding-top: 34px;
   padding-bottom: max(16px, env(safe-area-inset-bottom));
-  /* Fades the page out behind it instead of cutting it off mid-line. */
-  background: linear-gradient(180deg, transparent, var(--bg) 42%);
+  background: linear-gradient(180deg, transparent, var(--bg) 34px);
   animation: decision-in 260ms var(--ease-out) both;
 }
 

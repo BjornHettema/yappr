@@ -40,7 +40,14 @@ export type PendingQuestion = {
   id: string;
   /** The realtime tool call this came from, so it can be acknowledged. */
   callId: string;
-  /** Short and yes/no-able, in the traveler's language. */
+  /**
+   * "confirm" is one offer, answered yes or no, so the accepting option can
+   * lead. "choice" is several alternatives the business named, which are peers
+   * — styling one of them as the recommendation would be Yappr nudging a
+   * decision it is not allowed to make.
+   */
+  kind: "confirm" | "choice";
+  /** Short and answerable, in the traveler's language. */
   question: string;
   /** What the business said, in their own words. */
   businessSaid: string;

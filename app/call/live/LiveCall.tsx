@@ -75,6 +75,8 @@ export default function LiveCall() {
   const coachRef = useRef<HTMLTextAreaElement>(null);
   /** Mirrors `pending` for the async handlers, which can't read state. */
   const pendingRef = useRef<PendingQuestion | null>(null);
+  /** A question being translated into the traveler's language, not yet shown. */
+  const preparingQuestion = useRef(false);
   const decisions = useRef<Decision[]>([]);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -269,6 +271,16 @@ export default function LiveCall() {
     });
   }
 
+  /**
+   * A decision is with the traveler — or is about to be. Everything that
+   * suppresses the rest of the call has to count the gap between the tool
+   * call and the card appearing, or a business reply lands in the middle of
+   * a hold that has already been promised.
+   */
+  function questionOpen() {
+    return pendingRef.current !== null || preparingQuestion.current;
+  }
+
   /** Keeps the ref and the rendered state in step; always use this, not setPending. */
   function setPendingQuestion(next: PendingQuestion | null) {
     pendingRef.current = next;
@@ -286,10 +298,16 @@ export default function LiveCall() {
    */
   function raiseQuestion(rawArgs: string | undefined, callId: string | undefined) {
     // One open question at a time. A second call before the first is answered
-    // would silently replace the thing the traveler is looking at.
-    if (pendingRef.current || hangingUp.current) return;
+    // would silently replace the thing the traveler is looking at — including
+    // while the first is still being prepared.
+    if (pendingRef.current || preparingQuestion.current || hangingUp.current) return;
 
-    let parsed: { question?: string; businessSaid?: string; options?: unknown };
+    let parsed: {
+      kind?: string;
+      question?: string;
+      businessSaid?: string;
+      options?: unknown;
+    };
     try {
       parsed = JSON.parse(rawArgs || "{}");
     } catch {
@@ -304,16 +322,22 @@ export default function LiveCall() {
       .filter(Boolean)
       .slice(0, 3);
 
-    const next: PendingQuestion = {
+    const draft: PendingQuestion = {
       id: newId(),
       callId: callId || "",
+      // Unknown or missing falls back to "choice", which renders every option
+      // as an equal peer. Failing that way round is harmless; falling back to
+      // "confirm" would put false emphasis on whichever option came first.
+      kind: parsed.kind === "confirm" ? "confirm" : "choice",
       question,
       businessSaid: (parsed.businessSaid || "").trim(),
       businessSaidTranslated: "",
       options: options.length ? options : ["Yes", "No"],
+      // Timed from now, not from when the card appears: the business starts
+      // waiting the moment Yappr says "one moment", and 30s is their ceiling.
       askedAt: Date.now(),
     };
-    setPendingQuestion(next);
+    preparingQuestion.current = true;
 
     if (callId) {
       send({
@@ -337,24 +361,60 @@ export default function LiveCall() {
     // refuses a second response while one is active.
     holdQueued.current = holdInstructions(brief, decisions.current.length > 0);
 
-    void translateQuestionQuote(next);
+    void showQuestion(draft);
   }
 
   /**
-   * Fills in the traveler-language version of what the business said. Separate
-   * from raiseQuestion so the question itself renders immediately rather than
-   * waiting on a translation round-trip while someone holds the line.
+   * Guarantees the card is in the traveler's language before it is shown.
+   *
+   * The tool asks for `question` and `options` in the traveler's language, and
+   * the model mostly complies — but it spends the whole call under an
+   * instruction to speak only the local language, so sometimes it writes these
+   * in that language too. A traveler who set English and got "17:00
+   * ได้ไหมครับ?" cannot answer, which is the one thing this card must never be.
+   * Intermittent by nature: `businessSaid` was always right because it goes
+   * through the translator, and the question was wrong only when the model
+   * drifted. So the question goes through the translator as well.
+   *
+   * The translator is told to return text already in the target language
+   * unchanged, so the correct case costs a round trip and changes nothing.
+   * All of it runs in parallel and the card appears once, complete — no text
+   * rewriting itself under someone's finger.
    */
-  async function translateQuestionQuote(question: PendingQuestion) {
-    if (!question.businessSaid) return;
-    const translated = await translate(
-      question.businessSaid,
-      brief.localLanguage,
-      brief.travelerLanguage,
-    );
-    // It may have been answered or expired while that was in flight.
-    if (pendingRef.current?.id !== question.id) return;
-    setPendingQuestion({ ...question, businessSaidTranslated: translated });
+  async function showQuestion(draft: PendingQuestion) {
+    const sameLanguage =
+      brief.travelerLanguage.trim().toLowerCase() ===
+      brief.localLanguage.trim().toLowerCase();
+
+    // A failed translation falls back to what the model wrote. Wrong-language
+    // text is bad; no question at all, with a business holding the line, is
+    // worse.
+    const toTraveler = (text: string) =>
+      text && !sameLanguage
+        ? translate(text, brief.localLanguage, brief.travelerLanguage).catch(
+            () => text,
+          )
+        : Promise.resolve(text);
+
+    try {
+      const [businessSaidTranslated, question, ...options] = await Promise.all([
+        toTraveler(draft.businessSaid),
+        toTraveler(draft.question),
+        ...draft.options.map(toTraveler),
+      ]);
+
+      // The call may have ended while those were in flight.
+      if (hangingUp.current) return;
+
+      setPendingQuestion({
+        ...draft,
+        businessSaidTranslated,
+        question: question || draft.question,
+        options: options.map((option, index) => option || draft.options[index]),
+      });
+    } finally {
+      preparingQuestion.current = false;
+    }
   }
 
   function recordDecision(question: PendingQuestion, answer: string) {
@@ -418,7 +478,7 @@ export default function LiveCall() {
       // A decision is with the traveler, so the business is holding and
       // nobody speaks until the answer lands. Checked here as well as below
       // because the tool call and the spoken hold line arrive independently.
-      if (pendingRef.current) return;
+      if (questionOpen()) return;
 
       const res = await fetch("/api/simulate-business", {
         method: "POST",
@@ -435,7 +495,7 @@ export default function LiveCall() {
       const data = await res.json();
       // Same check again: ask_traveler can land while this request is open,
       // and a business line arriving mid-hold would be out of order.
-      if (!res.ok || hangingUp.current || pendingRef.current) return;
+      if (!res.ok || hangingUp.current || questionOpen()) return;
 
       const businessOriginal = data.reply as string;
       await speak("business", businessOriginal);
@@ -491,7 +551,7 @@ export default function LiveCall() {
       }
       // Never hang up on a traveler who is mid-decision; the business is
       // holding precisely because an answer is still coming.
-      if (event.name === "end_call" && !pendingRef.current) {
+      if (event.name === "end_call" && !questionOpen()) {
         void hangUp();
       }
     }

@@ -22,7 +22,10 @@ Anything in the extra notes about an allergy, an intolerance, a medical need or 
 YOUR AUTHORITY IS LIMITED TO WHAT THE TRAVELER WROTE. You may agree to exactly that and nothing else. If the business offers anything different — a different seat, table, room, time, date, price, quantity, item, dish or person — that is a NEW OFFER, and you have no authority to accept it, decline it, or pick between options. It does not matter how small the difference is, how reasonable the substitute sounds, or how obviously a customer would say yes. Front row is not the middle row. 20:00 is not 19:00. Two is not three.
 
 When that happens, every single time it happens — the second, third and fourth time in a call as much as the first:
-1. Say nothing yet. Call the ask_traveler tool straight away. Put the decision in ${brief.travelerLanguage}, as short as it will go and answerable yes or no. Pass what the business said in their own words, unsoftened.
+1. Say nothing yet. Call the ask_traveler tool straight away, and pass what the business said in their own words, unsoftened.
+   - The question and the answer labels go in ${brief.travelerLanguage}, NOT ${brief.localLanguage}. They are read off a screen by the traveler and never spoken to anyone. You are speaking ${brief.localLanguage} out loud for the whole of this call, which makes it easy to write these in ${brief.localLanguage} too — do not. A traveler who reads ${brief.travelerLanguage} and is shown a question in ${brief.localLanguage} cannot answer it at all.
+   - If the business named more than one alternative, use kind "choice" and list every one of them. Two times offered means two options. Dropping one, or putting only your favourite to the traveler, is deciding for them just as much as accepting would be.
+   - Use kind "confirm" only when there is a single offer on the table and the honest answer is yes or no.
 2. You will then be asked for a holding line, and you say one every time. Never assume that because you already told them you were checking, they know you are checking again — a second silence after a second question is how a call gets hung up on.
 3. Then stop talking and wait. Do not fill the silence, do not ask the business anything else, and do not end the call.
 
@@ -134,6 +137,8 @@ Keep the reply to 1–3 spoken sentences, as someone would actually say on the p
  */
 export function translatePrompt(from: string, to: string, names?: string) {
   const base = `Translate from ${from} to ${to}. Return only the translation, no quotes or notes.
+
+If the text is already in ${to}, return it exactly as it is. Do not reword it, and do not translate it into ${from}.
 
 Keep numbers, dates, times, prices and proper names exactly as they are meant — never round, convert or paraphrase them.`;
 

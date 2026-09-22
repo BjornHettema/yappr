@@ -89,10 +89,16 @@ export const askTravelerTool = {
   parameters: {
     type: "object",
     properties: {
+      kind: {
+        type: "string",
+        enum: ["confirm", "choice"],
+        description:
+          "'confirm' when there is one offer on the table and the answer is yes or no. 'choice' when the business named more than one alternative and the traveler has to pick. Get this right: 'confirm' puts the weight of a recommendation behind the first option, which is wrong when they are simply alternatives.",
+      },
       question: {
         type: "string",
         description:
-          "The decision, in the traveler's language, as short as it can be and answerable with yes or no. One sentence, no preamble.",
+          "The decision, IN THE TRAVELER'S LANGUAGE, as short as it can be. One sentence, no preamble. This is read by the traveler on a screen, never spoken to the business, so it is the one thing on this call that is not in the local language.",
       },
       businessSaid: {
         type: "string",
@@ -103,10 +109,10 @@ export const askTravelerTool = {
         type: "array",
         items: { type: "string" },
         description:
-          "Two or three very short answer labels in the traveler's language, positive one first. Usually the equivalent of Yes and No.",
+          "Very short answer labels, IN THE TRAVELER'S LANGUAGE, at most three. For 'confirm', exactly two, the accepting one first. For 'choice', one for EVERY alternative the business named — if they offered two times, both times appear here. Never leave one out and never pick between them yourself; choosing which alternative to put to the traveler is still choosing for them.",
       },
     },
-    required: ["question", "businessSaid", "options"],
+    required: ["kind", "question", "businessSaid", "options"],
   },
 };
 
