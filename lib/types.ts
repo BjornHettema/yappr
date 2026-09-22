@@ -51,12 +51,14 @@ export type PendingQuestion = {
 };
 
 /**
- * How long the traveler gets. Someone who picked up a phone will not hold in
- * silence much longer than this, and on timeout Yappr says it will call back
- * rather than guessing: a lost call can be made again, a booking made on a
- * substitute nobody agreed to cannot be taken back.
+ * How long the traveler gets. Jeroen's ceiling, and it is a ceiling: someone
+ * who picked up a phone will not hold in silence longer than this, and being
+ * left waiting is how a real business decides not to take the next call.
+ * On timeout Yappr says it will call back rather than guessing — a lost call
+ * can be made again, a booking on a substitute nobody agreed to cannot be
+ * taken back.
  */
-export const ANSWER_WINDOW_SECONDS = 45;
+export const ANSWER_WINDOW_SECONDS = 30;
 
 export const CALL_BRIEF_KEY = "yappr.callBrief";
 export const TRANSCRIPT_KEY = "yappr.transcript";

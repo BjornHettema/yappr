@@ -21,6 +21,7 @@ import DecisionPrompt from "@/app/components/DecisionPrompt";
 import {
   callOpeningInstructions,
   holdExpiredInstructions,
+  holdInstructions,
   travelerAnswer,
 } from "@/lib/prompts";
 import { testLoggingActive } from "@/lib/testLog";
@@ -84,6 +85,10 @@ export default function LiveCall() {
   const sessionId = useRef(newId());
   const awaitingBusiness = useRef(false);
   const agentBuffer = useRef("");
+  /** Hold-line instructions waiting for the current response to finish. */
+  const holdQueued = useRef<string | null>(null);
+  /** Whether the response now in flight has produced any speech. */
+  const spokeThisResponse = useRef(false);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -267,6 +272,10 @@ export default function LiveCall() {
   /** Keeps the ref and the rendered state in step; always use this, not setPending. */
   function setPendingQuestion(next: PendingQuestion | null) {
     pendingRef.current = next;
+    // Closing a question cancels any hold line still waiting to go out: the
+    // answer (or the wind-up) is already on its way and "one moment" after it
+    // would be nonsense.
+    if (!next) holdQueued.current = null;
     setPending(next);
   }
 
@@ -314,11 +323,19 @@ export default function LiveCall() {
           call_id: callId,
           output: JSON.stringify({
             status: "waiting",
-            note: "The traveler is deciding. Say nothing until a [TRAVELER ANSWER] message arrives.",
+            note: "Asked. Say your holding line now, then nothing until a [TRAVELER ANSWER] message arrives.",
           }),
         },
       });
     }
+
+    // Tell the business to hold, every time, on the client's initiative. Left
+    // to the model this happened on the first question of a live call and not
+    // on the second — the whole point is that nobody is left listening to
+    // silence while the traveler decides. Queued rather than sent: the
+    // response carrying this tool call is still open, and the realtime API
+    // refuses a second response while one is active.
+    holdQueued.current = holdInstructions(brief, decisions.current.length > 0);
 
     void translateQuestionQuote(next);
   }
@@ -434,6 +451,7 @@ export default function LiveCall() {
       event.type === "response.audio_transcript.delta"
     ) {
       agentBuffer.current += event.delta || "";
+      spokeThisResponse.current = true;
       setPartial(agentBuffer.current);
       return;
     }
@@ -444,14 +462,25 @@ export default function LiveCall() {
     ) {
       const text = (event.transcript || agentBuffer.current).trim();
       agentBuffer.current = "";
+      spokeThisResponse.current = true;
       void afterAgentSpoke(text);
       return;
     }
 
-    if (event.type === "response.done" && agentBuffer.current.trim()) {
+    if (event.type === "response.done") {
       const text = agentBuffer.current.trim();
       agentBuffer.current = "";
-      void afterAgentSpoke(text);
+      if (text) void afterAgentSpoke(text);
+
+      // The turn is over, so a queued hold line can go now. Skipped if the
+      // model already spoke in this turn — then it has said something to the
+      // business itself and a second "one moment" on top would be noise.
+      const hold = holdQueued.current;
+      holdQueued.current = null;
+      if (hold && !spokeThisResponse.current && !hangingUp.current) {
+        send({ type: "response.create", response: { instructions: hold } });
+      }
+      spokeThisResponse.current = false;
       return;
     }
 

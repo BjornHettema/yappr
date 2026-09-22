@@ -27,9 +27,9 @@ export default function DecisionPrompt({
   onAnswer: (answer: string) => void;
   onSomethingElse: () => void;
 }) {
-  // Runs low rather than urgent-from-the-start: a red countdown for 45
-  // straight seconds just reads as pressure.
-  const low = secondsLeft <= 15;
+  // Runs low in the last third rather than being urgent from the start: a red
+  // countdown for the whole window just reads as pressure.
+  const low = secondsLeft <= 10;
 
   return (
     <div className="decision-dock">

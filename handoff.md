@@ -157,9 +157,22 @@ Saturday" — which two buttons cannot express — still works.
 
 Decisions settled with Jeroen: **any** difference needs a yes (not just
 material ones); buttons plus free text; and on no answer within
-`ANSWER_WINDOW_SECONDS` (45) Yappr apologises, says it will call back and hangs
-up rather than taking the offer. A lost call can be remade; a booking on a
-substitute cannot be unmade.
+`ANSWER_WINDOW_SECONDS` Yappr apologises, says it will call back and hangs up
+rather than taking the offer. A lost call can be remade; a booking on a
+substitute cannot be unmade. **The window is 30 seconds and 30 is Jeroen's
+ceiling** — it started at 45, which is longer than anyone holds a phone in
+silence. Don't raise it.
+
+**The holding line is client-driven, and that is deliberate.** Told to say it
+itself, the model said it on the first fork of a live call and silently
+skipped it on the second, leaving the stadium on a dead line. Now
+`raiseQuestion` queues `holdInstructions()` and `onRealtime` fires it on
+`response.done` — queued rather than sent immediately because the realtime API
+refuses a second response while the tool call's own response is still open. It
+is skipped only if the model already spoke in that turn, so there is never a
+doubled "one moment". `holdInstructions(brief, askedBefore)` varies the
+wording on repeat forks so it doesn't sound like a recording; `askedBefore`
+changes only the phrasing, never whether the line is spoken.
 
 While a question is open, the simulated business turn is suppressed and
 `end_call` is ignored — checked twice in `afterAgentSpoke`, because the tool

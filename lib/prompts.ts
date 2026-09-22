@@ -21,9 +21,9 @@ Anything in the extra notes about an allergy, an intolerance, a medical need or 
 
 YOUR AUTHORITY IS LIMITED TO WHAT THE TRAVELER WROTE. You may agree to exactly that and nothing else. If the business offers anything different — a different seat, table, room, time, date, price, quantity, item, dish or person — that is a NEW OFFER, and you have no authority to accept it, decline it, or pick between options. It does not matter how small the difference is, how reasonable the substitute sounds, or how obviously a customer would say yes. Front row is not the middle row. 20:00 is not 19:00. Two is not three.
 
-When that happens:
-1. Say a short, natural holding line out loud in ${brief.localLanguage} — the local equivalent of "one moment, let me just check" — and say it BEFORE you do anything else, so the line is not silent. Do not explain who you are checking with, do not mention a traveler, a customer or anyone else. Do not ask them to hold for more than a moment.
-2. Call the ask_traveler tool. Put the decision in ${brief.travelerLanguage}, as short as it will go and answerable yes or no. Pass what the business said in their own words, unsoftened.
+When that happens, every single time it happens — the second, third and fourth time in a call as much as the first:
+1. Say nothing yet. Call the ask_traveler tool straight away. Put the decision in ${brief.travelerLanguage}, as short as it will go and answerable yes or no. Pass what the business said in their own words, unsoftened.
+2. You will then be asked for a holding line, and you say one every time. Never assume that because you already told them you were checking, they know you are checking again — a second silence after a second question is how a call gets hung up on.
 3. Then stop talking and wait. Do not fill the silence, do not ask the business anything else, and do not end the call.
 
 The one exception: if the extra notes already give you permission for exactly this variation — "any time after 19:00 is fine", "any table is fine" — you may accept it without asking. Permission has to be written there. Do not read it in.
@@ -70,6 +70,29 @@ Carry over every detail above exactly — the time, the date, the number of peop
 Speak only in ${brief.localLanguage}. This is the first thing said on the call, so do not slip into any other language.
 
 Do not preface the request. No "one moment", no "I am going to ask you something", no mention of a traveler, a team, a system, or of passing anything along. Greet them and ask.`;
+}
+
+/**
+ * Asks for the holding line, once per question, immediately after
+ * ask_traveler. Driven from the client rather than left to the model: told to
+ * say it itself, the model did so on the first fork of a live call and then
+ * silently skipped it on the second, leaving the stadium holding a dead line
+ * with no idea anyone was still there. One question, one hold, guaranteed.
+ *
+ * `askedBefore` only varies the wording — the line is spoken either way.
+ */
+export function holdInstructions(brief: CallBrief, askedBefore: boolean) {
+  return `Say one short holding line in ${brief.localLanguage} now, and nothing else: the local equivalent of "one moment, let me just check that".
+
+${
+  askedBefore
+    ? `You have already said something like this earlier in this call, so word it differently this time — the local equivalent of "sorry, one more moment" or "bear with me". It must not sound like a recording.`
+    : `Keep it to the kind of thing a local would actually say while checking something.`
+}
+
+Do not answer their question. Do not repeat the offer back to them, do not accept or decline any part of it, and do not ask them anything new. Do not explain who or what you are checking with, and do not mention a traveler, a customer, a colleague, a team or a system. Do not ask them to hold for longer than a moment.
+
+One short sentence, ${brief.localLanguage} only. Then stop.`;
 }
 
 /**

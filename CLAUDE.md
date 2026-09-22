@@ -93,11 +93,14 @@ request time inside route handlers, never at module load or build time.
 - **Yappr has no authority to accept anything the traveler didn't write.** If
   the business offers something different — another seat, time, date, price,
   quantity or item — the model must call the `ask_traveler` tool (defined in
-  `lib/openai.ts`, handled in `LiveCall.tsx`), say a holding line in the local
-  language and go silent until a `[TRAVELER ANSWER]` message arrives. While a
+  `lib/openai.ts`, handled in `LiveCall.tsx`) and go silent until a
+  `[TRAVELER ANSWER]` message arrives. The holding line the business hears is
+  driven from the client, not left to the model: it queues on the tool call
+  and fires on `response.done`, once per question, **every** question — asked
+  to do it itself the model skipped the second one on a live call. While a
   question is open, the business turn is suppressed and `end_call` is ignored;
-  after `ANSWER_WINDOW_SECONDS` Yappr says it will call back and hangs up
-  rather than choosing. Don't reintroduce "offer a practical alternative" or
+  after `ANSWER_WINDOW_SECONDS` (30, and that is Jeroen's ceiling) Yappr says
+  it will call back and hangs up rather than choosing. Don't reintroduce "offer a practical alternative" or
   any rule that lets it decide — it is the whole point of the gate, and the
   only sanctioned exception is explicit latitude written in the brief's extra
   notes.
